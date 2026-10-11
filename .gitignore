@@ -1,0 +1,13 @@
+*.log
+.env
+.env.*
+!.env.example
+/.codex/
+/.codex-supervisor.json
+session-cache-*.bin
+settings.ini
+appearance.ini
+/artifacts/renders/
+/artifacts/build/
+node_modules/
+/artifacts/legacy/

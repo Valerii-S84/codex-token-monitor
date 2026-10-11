@@ -1,0 +1,44 @@
+{
+  "name": "codex-token-monitor-autostart",
+  "displayName": "Codex Token Monitor Autostart",
+  "description": "Starts the local Codex Token Monitor when VS Code is ready.",
+  "version": "1.1.1",
+  "publisher": "local",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Valerii-S84/codex-token-monitor.git",
+    "directory": "vscode-autostart"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "extensionKind": [
+    "ui"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "contributes": {
+    "configuration": {
+      "title": "Codex Token Monitor",
+      "properties": {
+        "codexTokenMonitor.executablePath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional full path to the monitor. Leave empty to start CodexTokenMonitor.exe from the Desktop installation."
+        }
+      }
+    }
+  }
+}
