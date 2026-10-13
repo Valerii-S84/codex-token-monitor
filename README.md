@@ -1,139 +1,116 @@
-<p align="center">
-  <img src="assets/codex-token-monitor-mark.png" width="112" alt="Лого Codex Token Monitor">
-</p>
-
+<p align="center"><img src="assets/codex-token-monitor-mark.png" width="112" alt="Codex Token Monitor logo"></p>
 <h1 align="center">Codex Token Monitor</h1>
-
+<p align="center"><strong>English</strong> | <a href="README.uk.md">Українська</a></p>
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT"></a>
-  <a href="https://github.com/Valerii-S84/codex-token-monitor/actions/workflows/windows-ci.yml"><img src="https://github.com/Valerii-S84/codex-token-monitor/actions/workflows/windows-ci.yml/badge.svg" alt="Windows CI"></a>
+  <a href="https://github.com/Valerii-S84/codex-token-monitor/actions/workflows/windows-ci.yml"><img src="https://github.com/Valerii-S84/codex-token-monitor/actions/workflows/windows-ci.yml/badge.svg?branch=main" alt="Windows CI"></a>
 </p>
+<p align="center">Active agents, tokens, context, and daily Codex analytics in one Windows window.</p>
+<p align="center"><strong>One EXE · Local data · No API key</strong></p>
+<p align="center"><a href="#start">Quick start</a> · <a href="#screenshots">Screenshots</a> · <a href="#autostart">Autostart</a> · <a href="#development">Build and test</a></p>
+<p align="center"><img src="docs/screenshots/live-expanded.png" width="1000" alt="Expanded view with three active agents, task and session tokens, and context history"></p>
+<p align="center"><sub>The application interface is currently Ukrainian. Screenshots use demonstration data from render tests.</sub></p>
 
-<p align="center">
-  Активні агенти, токени, контекст і денна аналітика Codex — в одному вікні на Windows.
-</p>
+## What the monitor shows
 
-<p align="center">
-  <strong>Один EXE · Локальні дані · Без API key</strong>
-</p>
+Codex Token Monitor reads local Codex JSONL logs. It displays several agents, token usage, and daily statistics without calling the OpenAI API.
 
-<p align="center">
-  <a href="#start">Запуск</a> ·
-  <a href="#screenshots">Скриншоти</a> ·
-  <a href="#autostart">Автозапуск</a> ·
-  <a href="#development">Збірка та перевірка</a>
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/live-expanded.png" width="1000" alt="Розгорнутий режим: три активні агенти, токени завдання і сесії, поточний контекст та його зміни">
-</p>
-
-<p align="center"><sub>Поточний інтерфейс із демонстраційними даними з render-тестів.</sub></p>
-
-## Що показує монітор
-
-Codex Token Monitor читає локальні JSONL-журнали Codex. Він показує роботу кількох агентів, використані токени й статистику за днями без звернень до OpenAI API.
-
-| Можливість | Що ви бачите |
+| Feature | What you see |
 |---|---|
-| **Паралельні агенти** | Окремі картки активних сесій, назви завдань і репозиторії |
-| **Токени** | Підсумки поточного завдання, сесії та дня; вхід, вихід і кеш |
-| **Контекст** | Заповнення контекстного вікна вибраної сесії та графік змін |
-| **Аналітика** | Статистика за днями, кількість завдань і приблизний API-еквівалент |
-| **Вигляд** | Компактний і розгорнуті макети, палітри, анімація та закріплення поверх інших вікон |
-| **Автозапуск** | Локальне розширення запускає монітор разом із VS Code |
+| **Parallel agents** | Separate cards for active sessions, task names, and repositories |
+| **Tokens** | Current task, session, and daily totals; input, output, and cached tokens |
+| **Context** | Selected session's context window usage and its history |
+| **Analytics** | Daily token and task totals, with an approximate API equivalent |
+| **Appearance** | Compact and expanded layouts, palettes, animation, and always-on-top mode |
+| **Autostart** | A local extension starts the monitor with VS Code |
 
-Монітор читає журнали інкрементально, запам’ятовує положення та розмір вікна. Повторний запуск не створює другого екземпляра.
+The monitor reads logs incrementally and remembers window position and size. Starting it again does not create another instance.
 
 <a id="start"></a>
 
-## Швидкий запуск
+## Quick start
 
-1. Завантажте [CodexTokenMonitor.exe](https://github.com/Valerii-S84/codex-token-monitor/raw/refs/heads/main/CodexTokenMonitor.exe) або відкрийте клон репозиторію.
-2. Запустіть EXE. Окремий інсталятор для монітора не потрібен.
-3. Монітор знайде локальні журнали Codex і почне оновлювати дані.
+1. Download [CodexTokenMonitor.exe](https://github.com/Valerii-S84/codex-token-monitor/releases/latest/download/CodexTokenMonitor.exe) from the [latest Release](https://github.com/Valerii-S84/codex-token-monitor/releases/latest).
+2. Compare its SHA-256 with `SHA256SUMS.txt` from the same Release:
 
-**Для запуску потрібні:** Windows із .NET Framework та Codex, який створює локальні журнали сесій. API key для монітора не потрібен.
+   ```powershell
+   Get-FileHash .\CodexTokenMonitor.exe -Algorithm SHA256
+   ```
 
-Якщо журнали зберігаються в іншій папці:
+3. Run the EXE. No separate installer is needed.
+4. The monitor discovers your local Codex session logs and updates automatically.
+
+**Requirements:** Windows 10 or 11, .NET Framework **4.8 or later**, and Codex producing local session logs. No API key is needed. Windows Server is used for CI; desktop verification is performed on Windows 11. The first Release is unsigned; SHA-256 identifies the file but does not authenticate its publisher.
+
+If logs are stored elsewhere:
 
 ```powershell
 .\CodexTokenMonitor.exe --codex-home "D:\CodexData"
 ```
 
-Команди в цьому README виконуються з кореня репозиторію.
+Development commands run from the repository root. Downloaded files can be placed in any folder; configure the EXE path when using autostart.
 
 <a id="screenshots"></a>
 
-## Скриншоти
+## Screenshots
 
-### Компактний режим
+### Compact view
 
-Вікно для роботи поруч із редактором: активні агенти, токени та контекст вибраної сесії.
+A window beside your editor showing active agents, tokens, and the selected session's context.
 
-<p align="center">
-  <a href="docs/screenshots/live-compact.png">
-    <img src="docs/screenshots/live-compact.png" width="420" alt="Компактний режим Codex Token Monitor з трьома картками агентів і графіком контексту">
-  </a>
-</p>
+<p align="center"><a href="docs/screenshots/live-compact.png"><img src="docs/screenshots/live-compact.png" width="420" alt="Compact view with three agent cards and a context chart"></a></p>
 
-### Аналітика за днями
+### Daily analytics
 
-Вкладка **«АНАЛІТИКА»** показує підсумки за проіндексованими днями. Кнопка **«ДАВНІШІ»** завантажує додаткові журнали.
+The **АНАЛІТИКА** (Analytics) tab shows totals for indexed days. **ДАВНІШІ** (Older) loads more logs.
 
-<p align="center">
-  <a href="docs/screenshots/analytics.png">
-    <img src="docs/screenshots/analytics.png" width="760" alt="Вкладка АНАЛІТИКА зі статистикою токенів і завдань за днями">
-  </a>
-</p>
+<p align="center"><a href="docs/screenshots/analytics.png"><img src="docs/screenshots/analytics.png" width="760" alt="Daily analytics with token and task statistics"></a></p>
 
-Усі зображення отримані з реальних контролів поточної версії. Числа, завдання й сесії на них демонстраційні.
+These images show real application controls. Numbers, tasks, and sessions are demonstration data.
 
-## Керування
+## Controls
 
-| Дія | Керування |
+| Action | Control |
 |---|---|
-| Оновити дані | Кнопка `↻` |
-| Вибрати агента | Картка агента або кнопки переходу між сесіями |
-| Переглянути денну статистику | Вкладка **«АНАЛІТИКА»** |
-| Закріпити вікно поверх інших | Кнопка закріплення у верхній панелі |
-| Налаштувати вигляд | **«Вигляд»** у нижній частині вікна |
-| Перемкнути макет | `Ctrl+1`, `Ctrl+2`, `Ctrl+3` |
-| Увімкнути або призупинити анімацію | `Ctrl+M` |
+| Refresh | `↻` button |
+| Select an agent | Agent card or session navigation buttons |
+| Open daily statistics | **АНАЛІТИКА** (Analytics) tab |
+| Keep the window on top | Pin button in the top bar |
+| Change appearance | **Вигляд** (Appearance) at the bottom |
+| Switch layout | `Ctrl+1`, `Ctrl+2`, `Ctrl+3` |
+| Toggle animation | `Ctrl+M` |
 
-Вікно можна перетягувати за верхню вільну область і змінювати його розмір за краї або кути. Налаштування вигляду та положення зберігаються між запусками.
+Drag the unused top area to move the window. Resize it using its edges or corners. Position and appearance preferences persist between launches.
 
-## Як читати показники
+## Reading the metrics
 
-| Показник | Значення |
+| Metric | Meaning |
 |---|---|
-| **Завдання** | Токени поточного або останнього завдання вибраної сесії |
-| **Сесія** | Загальна кількість токенів вибраної Codex-сесії |
-| **Сьогодні** | Підсумок усіх проіндексованих сесій за поточний локальний день |
-| **Вхід / Input** | Вхідні токени, включно з кешованими |
-| **Вихід / Output** | Вихідні токени моделі |
-| **Кеш / Cached** | Кешована частина вхідних токенів |
-| **API ≈ / API VALUE** | Орієнтовний API-еквівалент за вбудованим каталогом ставок |
+| **Завдання / Task** | Tokens for the current or last task in the selected session |
+| **Сесія / Session** | Total tokens for the selected Codex session |
+| **Сьогодні / Today** | All indexed sessions for the current local day |
+| **Вхід / Input** | Input tokens, including cached tokens |
+| **Вихід / Output** | Model output tokens |
+| **Кеш / Cached** | The cached portion of input tokens |
+| **API ≈ / API VALUE** | Approximate API equivalent using the embedded rate catalog |
 
-`Cached` уже входить до `Input`; монітор не додає ці токени вдруге. Reasoning-токени не додаються до вартості поверх `Output`.
+`Cached` is included in `Input` and is not counted twice. Reasoning tokens are not added to cost on top of `Output`.
 
-**API-еквівалент не є рахунком за підпискою Codex або залишком її ліміту.** Каталог моделей і ставок міститься у [src/Pricing.cs](src/Pricing.cs). Ставки Standard для короткого контексту звірено 11 жовтня 2026 року; [повний перелік і джерела](docs/API_PRICING.md). Надбавки за довгий контекст, Fast/Ultrafast, регіон та виклики інструментів не враховуються. Невідомі моделі та відсутні ставки позначають оцінку як часткову; значення не гарантує суму фактичного API-рахунку.
+**The API equivalent is not your Codex subscription bill or remaining subscription allowance.** Rates are in [src/Pricing.cs](src/Pricing.cs). Standard short-context rates were checked on October 11, 2026; see the [catalog and sources](docs/API_PRICING.md). Long-context, Fast/Ultrafast, regional, and tool-call surcharges are excluded. Unknown models or unavailable rates make an estimate partial. It does not guarantee an actual API bill.
 
 <a id="autostart"></a>
 
-## Автозапуск із VS Code
+## Autostart with VS Code
 
-У репозиторії є [локальне розширення автозапуску](vscode-autostart/README.md) версії **1.1.1**. Воно запускає EXE після завантаження VS Code та працює локально навіть для віддаленого workspace.
+The [local autostart extension](vscode-autostart/README.md), version **1.1.1**, launches the EXE after VS Code loads. It runs locally, including when your workspace is remote. It starts with VS Code, not with Windows.
 
-Завантажте [пакет автозапуску VSIX](https://github.com/Valerii-S84/codex-token-monitor/raw/refs/heads/main/artifacts/codex-token-monitor-autostart-1.1.1.vsix) або використайте файл із клонованого репозиторію. Встановіть його через команду **Extensions: Install from VSIX…** у VS Code або через `code`:
+Download the [VSIX](https://github.com/Valerii-S84/codex-token-monitor/releases/latest/download/codex-token-monitor-autostart-1.1.1.vsix) and verify its SHA-256 from the same Release. Install through **Extensions: Install from VSIX…**, or from the download folder:
 
 ```powershell
-code --install-extension .\artifacts\codex-token-monitor-autostart-1.1.1.vsix --force
+code --install-extension .\codex-token-monitor-autostart-1.1.1.vsix --force
 ```
 
-Також можна встановити VSIX через команду **Extensions: Install from VSIX…** у VS Code. Після встановлення перезапустіть VS Code.
-
-Вкажіть розташування EXE у `settings.json` VS Code:
+Restart VS Code after installation. Set the executable path in VS Code's `settings.json`:
 
 ```json
 {
@@ -141,132 +118,118 @@ code --install-extension .\artifacts\codex-token-monitor-autostart-1.1.1.vsix --
 }
 ```
 
-Замініть приклад своїм шляхом. Якщо налаштування порожнє, розширення шукає EXE на робочому столі послідовно в папках `Codex Token Monitor`, `codex-token-monitor` та `кодекс токен монітор`. Для іншої назви папки або розташування вкажіть актуальний `codexTokenMonitor.executablePath`. Кілька вікон VS Code не створюють кілька екземплярів монітора.
+Replace the example with your own path. When empty, this setting searches the Desktop folders `Codex Token Monitor`, `codex-token-monitor`, and then `кодекс токен монітор`. For other locations, configure the path explicitly. Multiple VS Code windows do not create multiple monitor instances.
 
 <a id="development"></a>
 
-## Збірка та перевірка
+## Build and test
 
-Для роботи з кодом потрібен Windows PowerShell; повна брама перевірок також використовує Node.js для тесту автозапуску. Зовнішні NuGet-пакети не використовуються.
+Use **Windows PowerShell 5.1** and .NET Framework 4.8 or later. The full gate also requires **Node.js 22 or later** for autostart tests. No external NuGet packages are used.
 
-### Збірка
+### Build
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1
 ```
 
-Результат — `CodexTokenMonitor.exe` у корені. Перед перезбиранням закрийте запущений монітор.
-
-Для збірки в окрему папку:
+This writes `CodexTokenMonitor.exe` to the root. Close a running copy before replacing it. To build separately:
 
 ```powershell
 New-Item -ItemType Directory -Force .\artifacts\build | Out-Null
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -OutputPath ".\artifacts\build\CodexTokenMonitor.exe"
 ```
 
-### Повна перевірка
+### Full verification
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\test.ps1
 ```
 
-Брама охоплює smoke- та Analytics-перевірки, стійкість до збоїв, панель показників, паралельні агенти, макет, анімацію та автозапуск. Успішний запуск завершується:
+The gate covers smoke, analytics, crash resilience, dashboard, multi-agent behavior, layouts, animation, and autostart. Success ends with `RELEASE_GATE_OK`.
 
-```text
-RELEASE_GATE_OK
-```
-
-Render-тести входять до повної брами. Для окремого запуску:
+Test scripts use temporary log and data directories and restore their process environment afterwards. Personal logs and settings are not used. All nine render sizes remain required, including `1240×900`. CI temporarily selects a supported `1280×1024` mode on its disposable GitHub-hosted runner. Local scripts never change your display mode.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\render-test.ps1
 ```
 
-Контрольні зображення створюються в `artifacts/renders/` і ігноруються Git. Відібрані зображення для цього README зберігаються окремо в `docs/screenshots/`.
+Images go to ignored `artifacts/renders/`. CI preserves available images even after failure. Selected README screenshots are stored in `docs/screenshots/`.
 
-<details>
-<summary><strong>Production-збірка з цифровим підписом</strong></summary>
+### Release builds
 
-Потрібні чисте робоче дерево Git, тег на `HEAD` і чинний сертифікат із приватним ключем:
+See [RELEASING.md](docs/RELEASING.md) for clean-commit builds, binary verification, SHA-256, and publication. Signing is optional for the first Release.
+
+Optional signed production builds require a clean Git tree, a tag on `HEAD`, and a valid certificate with its private key:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -Production -CodeSigningThumbprint "YOUR_CERTIFICATE_THUMBPRINT"
 ```
 
-Скрипт створює підписаний EXE та `.release.json` із commit, тегом і SHA-256. Для звичайного локального запуску production-збірка не потрібна.
+## Privacy and local files
 
-</details>
+The monitor reads local logs, makes no network requests, and sends no telemetry. Original Codex logs remain unchanged.
 
-## Приватність і локальні файли
+Application data defaults to `%LOCALAPPDATA%\CodexTokenMonitor`:
 
-Монітор читає локальні журнали, не виконує мережевих запитів і не надсилає телеметрію. Оригінальні журнали Codex залишаються без змін.
-
-Службові дані зберігаються у `%LOCALAPPDATA%\CodexTokenMonitor`:
-
-| Файл | Призначення |
+| File | Purpose |
 |---|---|
-| `settings.ini` | Положення, розмір вікна та закріплення |
-| `appearance.ini` | Макет, палітра й параметри анімації |
-| `session-cache-v9.bin` | Інкрементальний індекс сесій і токенів |
-| `errors.log` | Локальний журнал помилок, якщо вони виникли |
+| `settings.ini` | Window position, size, and pinning |
+| `appearance.ini` | Layout, palette, and animation preferences |
+| `session-cache-v9.bin` | Incremental session and token index |
+| `errors.log` | Local error log |
 
-Видалення кешу не видаляє сесії, але наступний запуск індексуватиме журнали заново.
+Deleting the cache does not delete sessions; the next launch rebuilds the index. For isolated testing or a separate data directory, set `CODEX_TOKEN_MONITOR_DATA_HOME` for the process. Leaving it unset preserves the normal location.
 
 <details>
-<summary><strong>Як знаходяться журнали та назви сесій</strong></summary>
+<summary><strong>How logs and session names are found</strong></summary>
 
-Монітор перевіряє `CODEX_HOME` у такому порядку:
+Codex home candidates are checked in this order:
 
-1. Аргумент `--codex-home` або `--codex-home=...`.
-2. Змінна середовища `CODEX_HOME`.
+1. `--codex-home` or `--codex-home=...` argument.
+2. `CODEX_HOME` environment variable.
 3. `%USERPROFILE%\.codex`.
 4. `%LOCALAPPDATA%\Codex`.
 5. `%APPDATA%\Codex`.
 
-На старті запитується індексація 240 найновіших журналів із `sessions` та `archived_sessions`. «ДАВНІШІ» додає ще 120. Якщо одна сесія є в обох папках, монітор вибирає найповнішу копію.
+At startup, the monitor requests the 240 newest logs in `sessions` and `archived_sessions`. **ДАВНІШІ** (Older) adds 120 more. Duplicate sessions use the most complete copy.
 
-Repository визначається з `cwd` і найближчої папки `.git`. Для назви завдання використовуються `session_index.jsonl`, події сесії, резервні назви з `history.jsonl` або назва repository.
+The repository is derived from `cwd` and the nearest `.git` directory. Task names come from `session_index.jsonl`, session events, or fallback names in `history.jsonl` and the repository name.
 
 </details>
 
-## Якщо щось не працює
+## Troubleshooting
 
-| Ситуація | Що перевірити |
+| Situation | Check |
 |---|---|
-| `CODEX_HOME not found` | Чи існують журнали; за потреби передайте шлях через `--codex-home` |
-| Аналітика ще неповна | Дочекайтеся фонової індексації або натисніть «ДАВНІШІ» |
-| API-оцінка позначена як часткова | Чи є модель і потрібні ставки у `src/Pricing.cs` |
-| Автозапуск не спрацьовує | Шлях до EXE у `codexTokenMonitor.executablePath`; перезапуск VS Code |
-| Збірка не замінює EXE | Закрийте запущений монітор або використайте інший `-OutputPath` |
+| `CODEX_HOME not found` | Confirm session logs exist; specify `--codex-home` |
+| Incomplete analytics | Wait for indexing or click **ДАВНІШІ** (Older) |
+| Partial API estimate | Check model and rates in `src/Pricing.cs` |
+| Autostart does not work | Configure `codexTokenMonitor.executablePath` and restart VS Code |
+| Build cannot replace EXE | Close the running copy or use another `-OutputPath` |
 
-Для повідомлення про проблему додайте версію Windows, кроки відтворення й текст помилки. Перевірте, що скриншот або фрагмент журналу не містить приватних назв чи шляхів.
+For issues, include Windows and application versions, reproduction steps, and error text. Remove private names and paths from screenshots and log excerpts.
 
-## Структура репозиторію
+## Repository layout
 
 ```text
-README.md               опис і запуск
-LICENSE                 ліцензія MIT
-CodexTokenMonitor.exe    поточний застосунок
-src/                    вихідний код
-tests/                  тести
-scripts/                збірка та перевірки
-resources/              manifest: DPI та Windows-сумісність
-assets/                 іконка та лого
-docs/
-  README.md             посилання на головний README
-  screenshots/          відібрані зображення для GitHub
-vscode-autostart/        розширення, пакування та тест
-artifacts/              VSIX і згенеровані результати
+README.md / README.uk.md English and Ukrainian documentation
+LICENSE                 MIT license
+CodexTokenMonitor.exe    legacy repository binary; use Releases for versioned downloads
+src/                    source code
+tests/                  regression tests and binary verifier
+scripts/                build, test, and release scripts
+resources/              DPI and Windows manifest
+assets/                 icon and logo
+docs/                   screenshots, pricing, and release instructions
+vscode-autostart/        local extension, packaging, and tests
+artifacts/              VSIX and ignored generated results
 .github/workflows/      Windows CI
-.gitignore              правила ігнорування
 ```
 
-## Ліцензія
+## License
 
-Проєкт поширюється за [ліцензією MIT](LICENSE). Ви можете безкоштовно використовувати, змінювати, поширювати та продавати копії, зокрема в комерційних проєктах, зі збереженням повідомлення про авторське право й тексту ліцензії. Програмне забезпечення надається без гарантій.
+[MIT](LICENSE). You may use, modify, distribute, and sell copies, including commercially, while retaining the copyright and license notices. The software is provided without warranty.
 
-Це незалежний проєкт, не офіційний продукт OpenAI.
+This is an independent project, not an official OpenAI product.
 
----
-
-**Ваші сесії залишаються на вашому комп’ютері.**
+**Your sessions stay on your computer.**

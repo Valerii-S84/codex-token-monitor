@@ -1,3 +1,3 @@
 # Codex Token Monitor
 
-Опис проєкту, запуск, скриншоти та інструкції зі збірки: [головний README](../README.md).
+Project overview, downloads, screenshots, and development: [English](../README.md) | [Українська](../README.uk.md).
