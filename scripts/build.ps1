@@ -1,5 +1,5 @@
 param(
-    [string]$OutputPath = (Join-Path (Split-Path -Parent $PSScriptRoot) 'CodexTokenMonitor.exe'),
+    [string]$OutputPath = (Join-Path (Split-Path -Parent $PSScriptRoot) 'artifacts\build\CodexTokenMonitor.exe'),
     [switch]$Production,
     [switch]$Release,
     [string]$ReleaseTag,

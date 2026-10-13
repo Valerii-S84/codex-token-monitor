@@ -9,5 +9,6 @@ settings.ini
 appearance.ini
 /artifacts/renders/
 /artifacts/build/
+/CodexTokenMonitor.exe
 node_modules/
 /artifacts/legacy/

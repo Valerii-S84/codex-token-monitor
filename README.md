@@ -11,6 +11,8 @@
 <p align="center"><img src="docs/screenshots/live-expanded.en.png" width="1000" alt="Expanded view with three active agents, task and session tokens, and context history"></p>
 <p align="center"><sub>Version 2.1.0 supports Ukrainian and English. Screenshots use demonstration data from render tests.</sub></p>
 
+Current release: **[v2.1.0](https://github.com/Valerii-S84/codex-token-monitor/releases/tag/v2.1.0)**. Download the EXE from Releases; the repository contains source code and documentation.
+
 ## What the monitor shows
 
 Codex Token Monitor reads local Codex JSONL logs. It displays several agents, token usage, and daily statistics without calling the OpenAI API.
@@ -28,6 +30,8 @@ Codex Token Monitor reads local Codex JSONL logs. It displays several agents, to
 The monitor reads logs incrementally and remembers window position and size. Starting it again does not create another instance.
 
 Choose **Appearance → Language → Українська / English** to switch without restarting. The selected agent, tab, window size, and chart history are preserved. Existing installations keep Ukrainian until you select another language. New installations use Ukrainian on Ukrainian Windows and English elsewhere. Dates and durations follow the selected language; original task, repository, and model names stay unchanged. Both translations are embedded in the EXE.
+
+Click **⚙ Appearance at the bottom of the window**, then **Language**. You can also open this menu by right-clicking the context chart.
 
 <a id="start"></a>
 
@@ -136,11 +140,10 @@ Use **Windows PowerShell 5.1** and .NET Framework 4.8 or later. The full gate al
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1
 ```
 
-This writes `CodexTokenMonitor.exe` to the root. Close a running copy before replacing it. To build separately:
+This writes `artifacts/build/CodexTokenMonitor.exe`. Close a running copy before replacing it. To keep a development build separate from the verified release:
 
 ```powershell
-New-Item -ItemType Directory -Force .\artifacts\build | Out-Null
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -OutputPath ".\artifacts\build\CodexTokenMonitor.exe"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -OutputPath ".\artifacts\build\development\CodexTokenMonitor.exe"
 ```
 
 ### Full verification
@@ -218,7 +221,6 @@ For issues, include Windows and application versions, reproduction steps, and er
 ```text
 README.md / README.uk.md English and Ukrainian documentation
 LICENSE                 MIT license
-CodexTokenMonitor.exe    legacy repository binary; use Releases for versioned downloads
 src/                    source code
 tests/                  regression tests and binary verifier
 scripts/                build, test, and release scripts
@@ -227,6 +229,7 @@ assets/                 icon and logo
 docs/                   screenshots, pricing, and release instructions
 vscode-autostart/        local extension, packaging, and tests
 artifacts/              VSIX and ignored generated results
+artifacts/build/        local EXE and release verification files (ignored by Git)
 .github/workflows/      Windows CI
 ```
 

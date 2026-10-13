@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT"></a>
-  <a href="https://github.com/Valerii-S84/codex-token-monitor/actions/workflows/windows-ci.yml"><img src="https://github.com/Valerii-S84/codex-token-monitor/actions/workflows/windows-ci.yml/badge.svg" alt="Windows CI"></a>
+  <a href="https://github.com/Valerii-S84/codex-token-monitor/actions/workflows/windows-ci.yml"><img src="https://github.com/Valerii-S84/codex-token-monitor/actions/workflows/windows-ci.yml/badge.svg?branch=main" alt="Windows CI"></a>
 </p>
 
 <p align="center">
@@ -32,6 +32,8 @@
 
 <p align="center"><sub>Версія 2.1.0 підтримує українську та англійську. Скриншоти містять демонстраційні дані з render-тестів.</sub></p>
 
+Актуальний випуск: **[v2.1.0](https://github.com/Valerii-S84/codex-token-monitor/releases/tag/v2.1.0)**. Завантажуйте EXE з Releases; репозиторій містить код і документацію.
+
 ## Що показує монітор
 
 Codex Token Monitor читає локальні JSONL-журнали Codex. Він показує роботу кількох агентів, використані токени й статистику за днями без звернень до OpenAI API.
@@ -49,6 +51,8 @@ Codex Token Monitor читає локальні JSONL-журнали Codex. Ві
 Монітор читає журнали інкрементально, запам’ятовує положення та розмір вікна. Повторний запуск не створює другого екземпляра.
 
 Виберіть **«Вигляд → Мова → Українська / English»**, щоб перемкнути весь інтерфейс без перезапуску. Вибраний агент, вкладка, розмір вікна та історія графіка зберігаються. Наявні встановлення залишаються українською до вашого вибору. Нові встановлення використовують українську на українській Windows та англійську на інших. Дати й тривалість відповідають вибраній мові; назви ваших завдань, репозиторіїв і моделей залишаються оригінальними. Обидва переклади вбудовані в один EXE.
+
+Натисніть **«⚙ Вигляд» унизу вікна**, а потім **«Мова»**. Це меню також відкривається правою кнопкою миші на графіку контексту.
 
 <a id="start"></a>
 
@@ -166,13 +170,12 @@ code --install-extension .\codex-token-monitor-autostart-1.1.1.vsix --force
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1
 ```
 
-Результат — `CodexTokenMonitor.exe` у корені. Перед перезбиранням закрийте запущений монітор.
+Результат — `artifacts/build/CodexTokenMonitor.exe`. Перед перезбиранням закрийте запущений монітор.
 
-Для збірки в окрему папку:
+Щоб відокремити збірку для розробки від перевіреного випуску:
 
 ```powershell
-New-Item -ItemType Directory -Force .\artifacts\build | Out-Null
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -OutputPath ".\artifacts\build\CodexTokenMonitor.exe"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -OutputPath ".\artifacts\build\development\CodexTokenMonitor.exe"
 ```
 
 ### Повна перевірка
@@ -223,7 +226,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -Pro
 | Файл | Призначення |
 |---|---|
 | `settings.ini` | Положення, розмір вікна та закріплення |
-| `appearance.ini` | Макет, палітра й параметри анімації |
+| `appearance.ini` | Мова, макет, палітра й параметри анімації |
 | `session-cache-v9.bin` | Інкрементальний індекс сесій і токенів |
 | `errors.log` | Локальний журнал помилок, якщо вони виникли |
 

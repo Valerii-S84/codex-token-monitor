@@ -23,4 +23,6 @@ The monitor version is **2.1.0** (`v2.1.0` tag, `2.1.0.0` assembly/file/manifest
 
 The first Release has no Authenticode signature. SHA-256 verifies file identity, not publisher identity. Optional signing uses `build.ps1 -Production`, requires a tag on `HEAD` and a valid signing certificate, and must occur before the final checksum/verification steps.
 
-The root repository EXE is a historical binary. The authoritative versioned downloads are Release assets. Packaging uses `artifacts/build/`, which Git ignores, and leaves the source checkout clean. Standard application data remains `%LOCALAPPDATA%\CodexTokenMonitor`; all verification uses isolated directories and never reads personal Codex logs.
+The authoritative versioned downloads are Release assets; no EXE is tracked in the source repository. The default build and packaging directory is `artifacts/build/`, which Git ignores. For development beside a running release, choose a separate `-OutputPath`. Standard application data remains `%LOCALAPPDATA%\CodexTokenMonitor`; all verification uses isolated directories and never reads personal Codex logs.
+
+CI runs the full test gate on every commit. It also builds and verifies a release candidate when that version's tag does not exist yet or points to the tested commit. Commits after publication run development builds and tests without repackaging the existing release. Increase the application version before preparing another release.

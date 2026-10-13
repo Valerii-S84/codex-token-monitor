@@ -18,7 +18,26 @@ jobs:
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-display.ps1 -Prepare
       - name: Build
         shell: powershell
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -Release -ReleaseTag v2.1.0 -OutputPath .\artifacts\build\CodexTokenMonitor.exe
+        run: |
+          $assembly = Get-Content .\src\AssemblyInfo.cs -Raw
+          $version = [regex]::Match($assembly, 'AssemblyVersion\("(\d+\.\d+\.\d+)\.0"\)').Groups[1].Value
+          if (-not $version) { throw 'Cannot identify the application version.' }
+          $releaseTag = 'v' + $version
+          $headCommit = (git rev-parse HEAD).Trim()
+          $tagCommit = $null
+          if (@(git tag --list $releaseTag).Count -gt 0) {
+            $tagCommit = (git rev-list -n 1 $releaseTag).Trim()
+          }
+          if ($tagCommit -and $tagCommit -ne $headCommit) {
+            # Later commits still run all tests without repackaging a published version.
+            powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1
+            'package_release=false' | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          } else {
+            powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -Release -ReleaseTag $releaseTag
+            'package_release=true' | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+          ('release_tag=' + $releaseTag) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Application tests
         shell: powershell
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\test.ps1
@@ -30,9 +49,11 @@ jobs:
           path: artifacts/renders/**/*.png
           if-no-files-found: warn
       - name: Verify and package final release files
+        if: env.package_release == 'true'
         shell: powershell
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\prepare-release.ps1 -ReleaseTag v2.1.0
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\prepare-release.ps1 -ReleaseTag $env:release_tag
       - name: Preserve verified release candidate
+        if: env.package_release == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: release-candidate
