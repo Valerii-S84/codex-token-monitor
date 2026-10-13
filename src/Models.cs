@@ -322,6 +322,18 @@ namespace CodexTokenMonitor
             get { return Path.Combine(SettingsDirectory, "settings.ini"); }
         }
 
+        public static string InstanceMutexName
+        {
+            get
+            {
+                const string standard = "Local\\CodexTokenMonitor-v2";
+                if (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CODEX_TOKEN_MONITOR_DATA_HOME"))) return standard;
+                string directory = SettingsDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).ToUpperInvariant();
+                using (System.Security.Cryptography.SHA256 hash = System.Security.Cryptography.SHA256.Create())
+                    return standard + "-" + BitConverter.ToString(hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(directory))).Replace("-", "");
+            }
+        }
+
         public static AppSettings Load()
         {
             AppSettings settings = new AppSettings();

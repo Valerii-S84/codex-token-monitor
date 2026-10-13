@@ -178,7 +178,7 @@ Application data defaults to `%LOCALAPPDATA%\CodexTokenMonitor`:
 | `session-cache-v9.bin` | Incremental session and token index |
 | `errors.log` | Local error log |
 
-Deleting the cache does not delete sessions; the next launch rebuilds the index. For isolated testing or a separate data directory, set `CODEX_TOKEN_MONITOR_DATA_HOME` for the process. Leaving it unset preserves the normal location.
+Deleting the cache does not delete sessions; the next launch rebuilds the index. For isolated testing or a separate data directory, set `CODEX_TOKEN_MONITOR_DATA_HOME` for the process. Each explicit data directory has its own single instance. Leaving it unset preserves the normal location and single-instance behavior.
 
 <details>
 <summary><strong>How logs and session names are found</strong></summary>
