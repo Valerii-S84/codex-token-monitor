@@ -50,7 +50,7 @@ namespace CodexTokenMonitor
             metadata.Days[1].ApiValue.UnknownTokens = 20;
             Assert(baseline != AuroraUi.DaysSignature(metadata.Days), "Partial pricing changes were ignored.");
             string isolated = Path.Combine(Path.GetTempPath(), "CodexDashboard-" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(isolated);
+            Directory.CreateDirectory(Path.Combine(isolated, "sessions"));
             try
             {
                 using (MainForm form = new MainForm(new[] { "--codex-home", isolated }))

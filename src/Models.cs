@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -308,12 +308,30 @@ namespace CodexTokenMonitor
 
         public static string SettingsDirectory
         {
-            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CodexTokenMonitor"); }
+            get
+            {
+                string overridePath = Environment.GetEnvironmentVariable("CODEX_TOKEN_MONITOR_DATA_HOME");
+                return String.IsNullOrWhiteSpace(overridePath)
+                    ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CodexTokenMonitor")
+                    : Path.GetFullPath(overridePath);
+            }
         }
 
         public static string SettingsPath
         {
             get { return Path.Combine(SettingsDirectory, "settings.ini"); }
+        }
+
+        public static string InstanceMutexName
+        {
+            get
+            {
+                const string standard = "Local\\CodexTokenMonitor-v2";
+                if (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CODEX_TOKEN_MONITOR_DATA_HOME"))) return standard;
+                string directory = SettingsDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).ToUpperInvariant();
+                using (System.Security.Cryptography.SHA256 hash = System.Security.Cryptography.SHA256.Create())
+                    return standard + "-" + BitConverter.ToString(hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(directory))).Replace("-", "");
+            }
         }
 
         public static AppSettings Load()

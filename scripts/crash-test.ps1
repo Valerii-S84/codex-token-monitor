@@ -1,8 +1,11 @@
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test-environment.ps1')
+$testEnvironment = Enter-TestEnvironment
+try {
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $sources = @((Get-ChildItem -LiteralPath (Join-Path $projectRoot 'src') -Filter '*.cs' -File | Select-Object -ExpandProperty FullName))
 $sources += (Join-Path $projectRoot 'tests\CrashResilienceTest.cs')
-$output = Join-Path $env:TEMP 'CodexTokenMonitor.CrashResilienceTest.exe'
+$output = Join-Path $testEnvironment.Root 'CodexTokenMonitor.CrashResilienceTest.exe'
 $provider = New-Object Microsoft.CSharp.CSharpCodeProvider
 $parameters = New-Object System.CodeDom.Compiler.CompilerParameters
 $parameters.GenerateExecutable = $true
@@ -16,3 +19,4 @@ if ($result.Errors.HasErrors) { throw (($result.Errors | ForEach-Object { $_.ToS
 & $output
 if ($LASTEXITCODE -ne 0) { throw "Crash-resilience test failed with exit code $LASTEXITCODE" }
 Write-Output 'CRASH_GATE_OK'
+} finally { Exit-TestEnvironment $testEnvironment }

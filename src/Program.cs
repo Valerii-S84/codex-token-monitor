@@ -13,7 +13,7 @@ namespace CodexTokenMonitor
         {
             EnableSharpDpiRendering();
             bool created;
-            using (Mutex mutex = new Mutex(true, "Local\\CodexTokenMonitor-v2", out created))
+            using (Mutex mutex = new Mutex(true, AppSettings.InstanceMutexName, out created))
             {
                 if (!created)
                 {

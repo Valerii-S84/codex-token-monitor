@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -46,7 +46,11 @@ namespace CodexTokenMonitor
 
         private static void Render(string path, Size size, int view, int displayMode = -1, int palette = 0)
         {
-            MainForm form = new MainForm(new[] { "--codex-home", @"C:\Users\User\.codex" });
+            string home = Environment.GetEnvironmentVariable("CODEX_HOME");
+            if (String.IsNullOrEmpty(home) || !Directory.Exists(Path.Combine(home, "sessions")))
+                throw new InvalidOperationException("Render tests require an isolated CODEX_HOME with a sessions directory.");
+            using (MainForm form = new MainForm(new[] { "--codex-home", home }))
+            {
             form.TopMost = false;
             form.StartPosition = FormStartPosition.Manual;
             form.ShowInTaskbar = false;
@@ -54,7 +58,9 @@ namespace CodexTokenMonitor
             ViewSettings.Current.Palette = palette;
             if (displayMode >= 0) form.ApplyDisplayMode(displayMode, false);
             form.Size = size;
-            if (form.Size != size) throw new InvalidOperationException("Requested render size was not applied: " + size);
+            if (form.Size != size) throw new InvalidOperationException("Requested render size was not applied: requested=" + size
+                + " actual=" + form.Size + " maxTrack=" + SystemInformation.MaxWindowTrackSize
+                + " screen=" + Screen.FromControl(form).Bounds);
             MonitorSnapshot snapshot = SampleSnapshot();
             MethodInfo apply = typeof(MainForm).GetMethod("ApplySnapshot", BindingFlags.Instance | BindingFlags.NonPublic);
             MethodInfo setView = typeof(MainForm).GetMethod("SetView", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -87,6 +93,10 @@ namespace CodexTokenMonitor
             form.Refresh();
             Application.DoEvents();
             AssertVisibleControlTextFitsVertically(form);
+            if (form.Size != size || form.ClientSize != size)
+                throw new InvalidOperationException("Render dimensions changed after showing the form: " + form.Size + " client=" + form.ClientSize);
+            if (displayMode > 0 && !form.IsExpandedDisplay)
+                throw new InvalidOperationException("Expanded render scenario did not exercise the expanded layout.");
             if (form.IsExpandedDisplay && view == 0)
             {
                 Control overview = (Control)typeof(MainForm).GetField("_overview", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(form);
@@ -160,7 +170,8 @@ namespace CodexTokenMonitor
             if (form.WindowState != FormWindowState.Minimized) throw new InvalidOperationException("Minimize button did not minimize the window.");
             form.WindowState = FormWindowState.Normal;
             form.Close();
-            form.Dispose();
+            Console.WriteLine("RENDER_CASE_OK " + Path.GetFileName(path) + " size=" + form.ClientSize);
+            }
         }
 
         private static void AssertVisibleControlTextFitsVertically(Control root)

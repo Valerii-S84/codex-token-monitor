@@ -11,9 +11,35 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Prepare and diagnose runner display
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-display.ps1 -Prepare
       - name: Build
         shell: powershell
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -Release -ReleaseTag v2.0.0 -OutputPath .\artifacts\build\CodexTokenMonitor.exe
       - name: Application tests
         shell: powershell
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\test.ps1
+      - name: Preserve render evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-evidence
+          path: artifacts/renders/*.png
+          if-no-files-found: warn
+      - name: Verify and package final release files
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\prepare-release.ps1 -ReleaseTag v2.0.0
+      - name: Preserve verified release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate
+          path: |
+            artifacts/build/CodexTokenMonitor.exe
+            artifacts/build/codex-token-monitor-autostart-1.1.1.vsix
+            artifacts/build/SHA256SUMS.txt
+            artifacts/build/release.json
+            artifacts/build/release-notes.md
+          if-no-files-found: error
