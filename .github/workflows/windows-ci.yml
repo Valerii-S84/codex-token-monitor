@@ -11,6 +11,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Runner display diagnostics
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-display.ps1
       - name: Build
         shell: powershell
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1
