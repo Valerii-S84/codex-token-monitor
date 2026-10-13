@@ -8,8 +8,8 @@
 <p align="center">Active agents, tokens, context, and daily Codex analytics in one Windows window.</p>
 <p align="center"><strong>One EXE · Local data · No API key</strong></p>
 <p align="center"><a href="#start">Quick start</a> · <a href="#screenshots">Screenshots</a> · <a href="#autostart">Autostart</a> · <a href="#development">Build and test</a></p>
-<p align="center"><img src="docs/screenshots/live-expanded.png" width="1000" alt="Expanded view with three active agents, task and session tokens, and context history"></p>
-<p align="center"><sub>The application interface is currently Ukrainian. Screenshots use demonstration data from render tests.</sub></p>
+<p align="center"><img src="docs/screenshots/live-expanded.en.png" width="1000" alt="Expanded view with three active agents, task and session tokens, and context history"></p>
+<p align="center"><sub>Version 2.1.0 supports Ukrainian and English. Screenshots use demonstration data from render tests.</sub></p>
 
 ## What the monitor shows
 
@@ -22,9 +22,12 @@ Codex Token Monitor reads local Codex JSONL logs. It displays several agents, to
 | **Context** | Selected session's context window usage and its history |
 | **Analytics** | Daily token and task totals, with an approximate API equivalent |
 | **Appearance** | Compact and expanded layouts, palettes, animation, and always-on-top mode |
+| **Language** | Complete Ukrainian / English interface; immediate switching and saved preference |
 | **Autostart** | A local extension starts the monitor with VS Code |
 
 The monitor reads logs incrementally and remembers window position and size. Starting it again does not create another instance.
+
+Choose **Appearance → Language → Українська / English** to switch without restarting. The selected agent, tab, window size, and chart history are preserved. Existing installations keep Ukrainian until you select another language. New installations use Ukrainian on Ukrainian Windows and English elsewhere. Dates and durations follow the selected language; original task, repository, and model names stay unchanged. Both translations are embedded in the EXE.
 
 <a id="start"></a>
 
@@ -58,13 +61,13 @@ Development commands run from the repository root. Downloaded files can be place
 
 A window beside your editor showing active agents, tokens, and the selected session's context.
 
-<p align="center"><a href="docs/screenshots/live-compact.png"><img src="docs/screenshots/live-compact.png" width="420" alt="Compact view with three agent cards and a context chart"></a></p>
+<p align="center"><a href="docs/screenshots/live-compact.en.png"><img src="docs/screenshots/live-compact.en.png" width="420" alt="Compact view with three agent cards and a context chart"></a></p>
 
 ### Daily analytics
 
-The **АНАЛІТИКА** (Analytics) tab shows totals for indexed days. **ДАВНІШІ** (Older) loads more logs.
+The **ANALYTICS** tab shows totals for indexed days. **OLDER** loads more logs.
 
-<p align="center"><a href="docs/screenshots/analytics.png"><img src="docs/screenshots/analytics.png" width="760" alt="Daily analytics with token and task statistics"></a></p>
+<p align="center"><a href="docs/screenshots/analytics.en.png"><img src="docs/screenshots/analytics.en.png" width="760" alt="Daily analytics with token and task statistics"></a></p>
 
 These images show real application controls. Numbers, tasks, and sessions are demonstration data.
 
@@ -74,9 +77,10 @@ These images show real application controls. Numbers, tasks, and sessions are de
 |---|---|
 | Refresh | `↻` button |
 | Select an agent | Agent card or session navigation buttons |
-| Open daily statistics | **АНАЛІТИКА** (Analytics) tab |
+| Open daily statistics | **ANALYTICS** tab |
 | Keep the window on top | Pin button in the top bar |
-| Change appearance | **Вигляд** (Appearance) at the bottom |
+| Change appearance | **Appearance** at the bottom |
+| Switch language | **Appearance → Language → Українська / English** |
 | Switch layout | `Ctrl+1`, `Ctrl+2`, `Ctrl+3` |
 | Toggle animation | `Ctrl+M` |
 
@@ -145,15 +149,15 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -Out
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\test.ps1
 ```
 
-The gate covers smoke, analytics, crash resilience, dashboard, multi-agent behavior, layouts, animation, and autostart. Success ends with `RELEASE_GATE_OK`.
+The gate covers smoke, analytics, crash resilience, dashboard, multi-agent behavior, localization, settings migration, layouts, animation, and autostart. Success ends with `RELEASE_GATE_OK`.
 
-Test scripts use temporary log and data directories and restore their process environment afterwards. Personal logs and settings are not used. All nine render sizes remain required, including `1240×900`. CI temporarily selects a supported `1280×1024` mode on its disposable GitHub-hosted runner. Local scripts never change your display mode.
+Test scripts use temporary log and data directories and restore their process environment afterwards. Personal logs and settings are not used. All nine render scenarios run in both Ukrainian and English (18 cases), including `1240×900`. CI temporarily selects a supported `1280×1024` mode on its disposable GitHub-hosted runner. Local scripts never change your display mode.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\render-test.ps1
 ```
 
-Images go to ignored `artifacts/renders/`. CI preserves available images even after failure. Selected README screenshots are stored in `docs/screenshots/`.
+Images go to ignored `artifacts/renders/uk/` and `artifacts/renders/en/`. CI preserves available images even after failure. Selected README screenshots are stored in `docs/screenshots/`.
 
 ### Release builds
 
@@ -174,7 +178,7 @@ Application data defaults to `%LOCALAPPDATA%\CodexTokenMonitor`:
 | File | Purpose |
 |---|---|
 | `settings.ini` | Window position, size, and pinning |
-| `appearance.ini` | Layout, palette, and animation preferences |
+| `appearance.ini` | Language, layout, palette, and animation preferences |
 | `session-cache-v9.bin` | Incremental session and token index |
 | `errors.log` | Local error log |
 

@@ -12,6 +12,7 @@ namespace CodexTokenMonitor
         private static void Main(string[] args)
         {
             EnableSharpDpiRendering();
+            L10n.SetLanguage(ViewSettings.Current.Language);
             bool created;
             using (Mutex mutex = new Mutex(true, AppSettings.InstanceMutexName, out created))
             {
@@ -25,12 +26,18 @@ namespace CodexTokenMonitor
                 AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { LogError(e.ExceptionObject as Exception); };
                 try
                 {
-                    Application.Run(new MainForm(args));
+                    using (MainForm form = new MainForm(args))
+                    {
+                        // Let construction detect a fresh installation for initial layout,
+                        // then persist its language before window settings mark it as existing.
+                        ViewSettings.Current.Save();
+                        Application.Run(form);
+                    }
                 }
                 catch (Exception ex)
                 {
                     LogError(ex);
-                    MessageBox.Show("The monitor could not start. Details were saved to the local error log.", "CODEX TOKEN MONITOR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(L10n.T("Program.StartError"), "CODEX TOKEN MONITOR", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }

@@ -18,7 +18,7 @@ jobs:
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runner-display.ps1 -Prepare
       - name: Build
         shell: powershell
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -Release -ReleaseTag v2.0.0 -OutputPath .\artifacts\build\CodexTokenMonitor.exe
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -Release -ReleaseTag v2.1.0 -OutputPath .\artifacts\build\CodexTokenMonitor.exe
       - name: Application tests
         shell: powershell
         run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\test.ps1
@@ -27,11 +27,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: render-evidence
-          path: artifacts/renders/*.png
+          path: artifacts/renders/**/*.png
           if-no-files-found: warn
       - name: Verify and package final release files
         shell: powershell
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\prepare-release.ps1 -ReleaseTag v2.0.0
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\prepare-release.ps1 -ReleaseTag v2.1.0
       - name: Preserve verified release candidate
         uses: actions/upload-artifact@v4
         with:

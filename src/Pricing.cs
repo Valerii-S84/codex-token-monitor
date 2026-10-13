@@ -151,7 +151,7 @@ namespace CodexTokenMonitor
 
         public static string ModelList(IDictionary<string, TokenUsage> usageByModel)
         {
-            if (usageByModel == null || usageByModel.Count == 0) return "model unavailable";
+            if (usageByModel == null || usageByModel.Count == 0) return UsageBuckets.UnknownModel;
             return String.Join(", ", usageByModel
                 .Where(x => x.Value != null && (x.Value.Total > 0 || x.Value.Input > 0 || x.Value.Output > 0))
                 .OrderByDescending(x => x.Value.Total)

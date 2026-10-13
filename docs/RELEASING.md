@@ -1,18 +1,18 @@
 # Release procedure
 
-The monitor version is **2.0.0** (`v2.0.0` tag, `2.0.0.0` assembly/file/manifest version). The independent VS Code extension remains **1.1.1**. Signing is optional; never describe an unsigned asset as signed.
+The monitor version is **2.1.0** (`v2.1.0` tag, `2.1.0.0` assembly/file/manifest version). The independent VS Code extension remains **1.1.1**. Signing is optional; never describe an unsigned asset as signed.
 
-1. Start from a clean, committed tree. Push it and require successful Windows CI for the exact commit. The full gate must reach `RELEASE_GATE_OK`; all nine render cases must pass.
+1. Start from a clean, committed tree. Push it and require successful Windows CI for the exact commit. The full gate must reach `RELEASE_GATE_OK`; all nine render cases must pass in both languages (18 cases), along with localization and settings migration checks.
 2. Build the candidate separately, embedding that source commit:
 
    ```powershell
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -Release -ReleaseTag v2.0.0 -OutputPath .\artifacts\build\CodexTokenMonitor.exe
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -Release -ReleaseTag v2.1.0 -OutputPath .\artifacts\build\CodexTokenMonitor.exe
    ```
 
 3. Package and verify the exact candidate, rather than rebuilding test assemblies as a substitute:
 
    ```powershell
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\prepare-release.ps1 -ReleaseTag v2.0.0
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\prepare-release.ps1 -ReleaseTag v2.1.0
    ```
 
    This verifies the built assembly and real startup process using temporary logs/settings, checks EXE/manifest/source versions and the VSIX contents, and creates `SHA256SUMS.txt`, `release.json`, and English release notes. The candidate directory contains the four upload assets: EXE, VSIX, checksum file, and metadata. Release notes are supplied as the GitHub release body.

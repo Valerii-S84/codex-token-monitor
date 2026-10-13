@@ -1,5 +1,5 @@
 param(
-    [string]$ReleaseTag = 'v2.0.0',
+    [string]$ReleaseTag = 'v2.1.0',
     [string]$Directory = (Join-Path (Split-Path -Parent $PSScriptRoot) 'artifacts\build')
 )
 $ErrorActionPreference = 'Stop'
@@ -28,9 +28,11 @@ $lines = foreach ($name in @('CodexTokenMonitor.exe',$vsixName,'release.json')) 
 $notes = @"
 Codex Token Monitor $ReleaseTag is a local Windows monitor for Codex sessions, parallel agents, token usage, context, and daily analytics.
 
-Requirements: Windows 10 or 11 and .NET Framework 4.8 or later. The interface is currently Ukrainian; the repository provides English and Ukrainian instructions. No API key or installer is required.
+Requirements: Windows 10 or 11 and .NET Framework 4.8 or later. The complete interface is available in Ukrainian and English. No API key or installer is required.
 
-This release preserves the compact/expanded layouts, analytics, incremental indexing, palettes, animation, always-on-top mode, and VS Code autostart. Windows CI verifies all nine render scenarios, regression gates, and the exact candidate binary in isolated data directories.
+Choose Appearance / Language (Вигляд / Мова) to switch immediately without restarting. The choice persists between launches. Existing installations retain Ukrainian until you choose otherwise; new installations use Ukrainian on Ukrainian Windows and English elsewhere. Dates, durations, tooltips, menus, chart labels, and analytics update together while your selected agent, tab, window size, and chart history remain intact. Original task, repository, and model names are preserved.
+
+This release preserves the compact/expanded layouts, analytics, incremental indexing, palettes, animation, always-on-top mode, and VS Code autostart. Windows CI verifies nine render scenarios per language (18 cases), localization and settings migration, regression gates, and the exact candidate binary in isolated data directories.
 
 Source commit: $commit
 Monitor version: $($build.version) (EXE/assembly/manifest $($build.version).0)

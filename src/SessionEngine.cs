@@ -415,7 +415,8 @@ namespace CodexTokenMonitor
             }
             catch (Exception ex)
             {
-                _latest = BuildSnapshot(ex.Message);
+                // Keep a stable diagnostic identifier; presentation adds the current-language prefix.
+                _latest = BuildSnapshot(ex.GetType().Name);
                 _lastSnapshotUtc = DateTime.UtcNow;
                 Action<MonitorSnapshot> handler = SnapshotReady;
                 if (handler != null) handler(_latest);
@@ -598,6 +599,8 @@ namespace CodexTokenMonitor
 
                 string repository = RepositoryFor(state.Cwd);
                 string title = TitleFor(state, repository);
+                bool fallbackTitle = String.IsNullOrEmpty(title);
+                bool fallbackRepository = String.IsNullOrWhiteSpace(state.Cwd);
                 Color accent = ColorFor(repository);
                 TaskState current = state.CurrentTask;
                 bool running = current != null && DateTime.Now - state.LastWriteLocal <= TimeSpan.FromMinutes(15);
@@ -609,6 +612,8 @@ namespace CodexTokenMonitor
                     Id = state.Id,
                     Title = title,
                     Repository = repository,
+                    IsFallbackTitle = fallbackTitle,
+                    IsFallbackRepository = fallbackRepository,
                     WorkingDirectory = state.Cwd,
                     LastActivityLocal = state.LastWriteLocal,
                     IsRunning = running,
@@ -622,7 +627,7 @@ namespace CodexTokenMonitor
                     ApiValue = PriceCatalog.Calculate(state.UsageByModel),
                     PrimaryLimit = state.PrimaryLimit.Clone(),
                     SecondaryLimit = state.SecondaryLimit.Clone(),
-                    CurrentOrLastTask = currentOrLast == null ? null : ToTaskView(currentOrLast, title, repository, state.Cwd, cursor.Path),
+                    CurrentOrLastTask = currentOrLast == null ? null : ToTaskView(currentOrLast, title, repository, state.Cwd, cursor.Path, fallbackTitle, fallbackRepository),
                     TurnCount = state.DailyTaskIds.Values.Sum(ids => ids.Count),
                     Accent = accent
                 };
@@ -692,7 +697,7 @@ namespace CodexTokenMonitor
             return count;
         }
 
-        private static TaskView ToTaskView(TaskState task, string title, string repository, string cwd, string logPath)
+        private static TaskView ToTaskView(TaskState task, string title, string repository, string cwd, string logPath, bool fallbackTitle, bool fallbackRepository)
         {
             return new TaskView
             {
@@ -700,6 +705,8 @@ namespace CodexTokenMonitor
                 TurnId = task.TurnId,
                 Title = title,
                 Repository = repository,
+                IsFallbackTitle = fallbackTitle,
+                IsFallbackRepository = fallbackRepository,
                 WorkingDirectory = cwd,
                 LogPath = logPath ?? "",
                 StartedLocal = task.StartedLocal,
@@ -734,12 +741,12 @@ namespace CodexTokenMonitor
             string title;
             if (_titles.TryGetValue(state.Id, out title) && !String.IsNullOrWhiteSpace(title)) return FormatUtil.OneLine(title, 90);
             if (!String.IsNullOrWhiteSpace(state.InlineTitle)) return FormatUtil.OneLine(state.InlineTitle, 90);
-            return String.IsNullOrEmpty(repository) ? "Codex task" : repository + " task";
+            return "";
         }
 
         private string RepositoryFor(string cwd)
         {
-            if (String.IsNullOrWhiteSpace(cwd)) return "Unknown repository";
+            if (String.IsNullOrWhiteSpace(cwd)) return "";
             string cached;
             if (_repositoryCache.TryGetValue(cwd, out cached)) return cached;
             string result = "";

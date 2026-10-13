@@ -15,6 +15,7 @@ namespace CodexTokenMonitor
         internal int Intensity = 80;
         internal bool Economy;
         internal bool Motion = true;
+        internal string Language = L10n.DefaultLanguage();
         internal static string FilePath { get { return Path.Combine(AppSettings.SettingsDirectory, "appearance.ini"); } }
         internal static ViewSettings Current = Load(FilePath);
         internal Color Accent { get { return Palette == 1 ? Theme.Yellow : Palette == 2 ? Theme.Orange : Theme.Cyan; } }
@@ -30,6 +31,9 @@ namespace CodexTokenMonitor
             ViewSettings value = new ViewSettings();
             try
             {
+                // A pre-language installation may have only the window settings file.
+                bool legacy = File.Exists(path) || File.Exists(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)), "settings.ini"));
+                if (legacy) value.Language = "uk";
                 if (!File.Exists(path)) return value;
                 foreach (string line in File.ReadAllLines(path))
                 {
@@ -42,6 +46,7 @@ namespace CodexTokenMonitor
                     else if (key == "intensity" && Int32.TryParse(raw, out number)) value.Intensity = Math.Max(0, Math.Min(100, number));
                     else if (key == "economy" && Boolean.TryParse(raw, out flag)) value.Economy = flag;
                     else if (key == "motion" && Boolean.TryParse(raw, out flag)) value.Motion = flag;
+                    else if (key.Trim() == "language") value.Language = L10n.IsValidLanguage(raw.Trim()) ? raw.Trim().ToLowerInvariant() : "uk";
                 }
             }
             catch (IOException) { }
@@ -53,7 +58,7 @@ namespace CodexTokenMonitor
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)));
             string pending = path + ".tmp";
             File.WriteAllLines(pending, new[] { "mode=" + Mode, "palette=" + Palette, "intensity=" + Intensity,
-                "economy=" + Economy, "motion=" + Motion });
+                "economy=" + Economy, "motion=" + Motion, "language=" + (L10n.IsValidLanguage(Language) ? Language.ToLowerInvariant() : "uk") });
             if (File.Exists(path)) File.Replace(pending, path, null); else File.Move(pending, path);
         }
         internal void Save()
@@ -82,16 +87,16 @@ namespace CodexTokenMonitor
         }
         internal static string Comparison(TaskView current, IEnumerable<TaskView> history)
         {
-            if (current == null) return "Завдання ще не вибране";
+            if (current == null) return L10n.T("Usage.NoTask");
             List<TaskView> peers = (history ?? Enumerable.Empty<TaskView>()).Where(t => t != null
                 && t.CompletedLocal.HasValue && !t.Interrupted && t.Usage != null && t.Usage.Total > 0
                 && String.Equals(t.WorkingDirectory, current.WorkingDirectory, StringComparison.OrdinalIgnoreCase)
                 && !(t.SessionId == current.SessionId && t.TurnId == current.TurnId))
                 .OrderByDescending(t => t.CompletedLocal).Take(20).ToList();
-            if (peers.Count == 0) return "Ще немає завдань для порівняння";
+            if (peers.Count == 0) return L10n.T("Usage.NoPeers");
             double average = peers.Average(t => (double)t.Usage.Total);
             double delta = ((current.Usage == null ? 0 : current.Usage.Total) / average - 1) * 100;
-            return delta.ToString("+0;-0;0", CultureInfo.InvariantCulture) + "% до середнього · " + peers.Count + " завд.";
+            return L10n.F("Usage.Comparison", delta.ToString("+0;-0;0", L10n.Culture), peers.Count);
         }
     }
 
@@ -110,11 +115,11 @@ namespace CodexTokenMonitor
         {
             if (Width < 60 || Height < 30) return;
             TaskView task = Session == null ? null : Session.CurrentOrLastTask;
-            string[] captions = { "ЗАВДАННЯ", "СЕСІЯ", "СЬОГОДНІ" };
+            string[] captions = { L10n.T("Usage.Task"), L10n.T("Usage.Session"), L10n.T("Usage.Today") };
             string[] values = { task == null ? "—" : FormatUtil.Tokens(task.Usage.Total), Session == null ? "—" : FormatUtil.Tokens(Session.SessionTotal.Total), FormatUtil.Tokens(Snapshot.Today.Total) };
             string[] details = { UsageSignals.Comparison(task, Snapshot.Sessions.Select(s => s.CurrentOrLastTask)),
-                Rate.HasValue ? FormatUtil.Tokens((long)Math.Round(Rate.Value)) + " токенів / хв" : "Збираємо дані швидкості…",
-                Snapshot.TodayTasks + " завдань · API ≈ " + FormatUtil.ApiValue(Snapshot.TodayApiValue) };
+                Rate.HasValue ? L10n.F("Usage.TokenRate", FormatUtil.Tokens((long)Math.Round(Rate.Value))) : L10n.T("Usage.CollectingRate"),
+                L10n.F("Usage.TodayDetail", Snapshot.TodayTasks, FormatUtil.ApiValue(Snapshot.TodayApiValue)) };
             Color[] colors = { Theme.Orange, ViewSettings.Current.Accent, Theme.Green };
             int gap = Math.Max(8, (int)(8 * LayoutScale));
             int width = (Width - gap * 2) / 3;

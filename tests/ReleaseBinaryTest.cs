@@ -83,6 +83,36 @@ internal static class ReleaseBinaryTest
                     bool expanded = (bool)formType.GetProperty("IsExpandedDisplay", Private).GetValue(form, null);
                     Check(expanded == (mode != 0), "Final EXE layout mode mismatch: " + mode);
                 }
+                // Verify localization in the actual candidate assembly, not a source-built substitute.
+                ((IDisposable)engine).Dispose();
+                Type localization = assembly.GetType("CodexTokenMonitor.L10n", true);
+                string[] catalogErrors = (string[])localization.GetMethod("ValidateCatalog", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, null);
+                Check(catalogErrors.Length == 0, "Final EXE has incomplete translations.");
+                MethodInfo applyLanguage = formType.GetMethod("ApplyLanguage", Private);
+                Check(applyLanguage != null, "Final EXE has no immediate language switch.");
+                formType.GetMethod("SetView", Private).Invoke(form, new object[] { 1 });
+                Size retainedSize = form.Size;
+                string retainedSession = (string)formType.GetField("_selectedSessionId", Private).GetValue(form);
+                object retainedSnapshot = formType.GetField("_snapshot", Private).GetValue(form);
+                object chart = formType.GetField("_contextChart", Private).GetValue(form);
+                IList retainedHistory = (IList)chart.GetType().GetField("History").GetValue(chart);
+                int retainedHistoryCount = retainedHistory.Count;
+                DataGridView days = (DataGridView)formType.GetField("_days", Private).GetValue(form);
+                object selectedDay = days.CurrentRow == null ? null : days.CurrentRow.Tag;
+                foreach (string language in new[] { "uk", "en", "uk", "en" })
+                {
+                    applyLanguage.Invoke(form, new object[] { language, true });
+                    Application.DoEvents();
+                    string expectedTab = language == "uk" ? "АНАЛІТИКА" : "ANALYTICS";
+                    Check(((Control)formType.GetField("_daysTab", Private).GetValue(form)).Text == expectedTab, "Final EXE navigation was not translated.");
+                    Check(form.Size == retainedSize, "Language switch resized final EXE.");
+                    Check((bool)formType.GetField("_daysMode", Private).GetValue(form), "Language switch lost analytics tab.");
+                    Check((string)formType.GetField("_selectedSessionId", Private).GetValue(form) == retainedSession, "Language switch changed selected agent.");
+                    Check(Object.ReferenceEquals(formType.GetField("_snapshot", Private).GetValue(form), retainedSnapshot), "Language switch replaced snapshot.");
+                    Check(retainedHistory.Count == retainedHistoryCount && Object.ReferenceEquals(chart.GetType().GetField("History").GetValue(chart), retainedHistory), "Language switch reset chart history.");
+                    Check(Object.Equals(days.CurrentRow == null ? null : days.CurrentRow.Tag, selectedDay), "Language switch changed selected day.");
+                    Check(File.ReadAllText(Path.Combine(data, "appearance.ini")).Contains("language=" + language), "Language selection was not persisted by final EXE.");
+                }
                 form.Close();
             }
             Check(File.ReadAllText(log) == fixture, "Verification changed source logs.");
@@ -114,7 +144,35 @@ internal static class ReleaseBinaryTest
             }
             Check(File.ReadAllText(log) == fixture, "Entry point changed source logs.");
             Check(!File.Exists(Path.Combine(data, "errors.log")), "Final EXE logged an error.");
-            Console.WriteLine("RELEASE_BINARY_OK version=" + args[2] + " commit=" + args[1] + " tokens=125 layouts=3 startup=OK singleInstance=OK logs=unchanged");
+            // Fresh startup must persist its Windows-derived default before settings.ini
+            // can make the next launch resemble a pre-language installation.
+            Type l10n = assembly.GetType("CodexTokenMonitor.L10n", true);
+            string defaultLanguage = (string)l10n.GetMethod("DefaultLanguage", BindingFlags.Static | BindingFlags.NonPublic,
+                null, Type.EmptyTypes, null).Invoke(null, null);
+            string freshData = Path.Combine(data, "fresh-startup");
+            for (int launch = 0; launch < 2; launch++)
+            {
+                ProcessStartInfo start = new ProcessStartInfo(executable, "--codex-home \"" + home + "\"")
+                    { UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden };
+                start.EnvironmentVariables["CODEX_TOKEN_MONITOR_DATA_HOME"] = freshData;
+                using (Process process = Process.Start(start))
+                {
+                    try
+                    {
+                        DateTime deadline = DateTime.UtcNow.AddSeconds(10);
+                        while (!process.HasExited && process.MainWindowHandle == IntPtr.Zero && DateTime.UtcNow < deadline)
+                        { Thread.Sleep(50); process.Refresh(); }
+                        Check(!process.HasExited && process.MainWindowHandle != IntPtr.Zero, "Fresh EXE startup failed.");
+                        string appearance = Path.Combine(freshData, "appearance.ini");
+                        Check(File.Exists(appearance) && File.ReadAllText(appearance).Contains("language=" + defaultLanguage), "Fresh EXE did not persist its Windows language default, launch " + launch);
+                        Check(process.CloseMainWindow() && process.WaitForExit(10000) && process.ExitCode == 0, "Fresh EXE did not close cleanly.");
+                        Check(File.Exists(Path.Combine(freshData, "settings.ini")), "Fresh EXE did not save window settings.");
+                        Check(!File.Exists(Path.Combine(freshData, "errors.log")), "Fresh EXE logged an error.");
+                    }
+                    finally { if (!process.HasExited) { process.Kill(); process.WaitForExit(); } }
+                }
+            }
+            Console.WriteLine("RELEASE_BINARY_OK version=" + args[2] + " commit=" + args[1] + " tokens=125 layouts=3 languages=2 switches=4 state=retained startup=OK singleInstance=OK logs=unchanged");
             return 0;
         }
         catch (Exception error) { Console.Error.WriteLine(error); return 1; }

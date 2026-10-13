@@ -18,22 +18,30 @@ namespace CodexTokenMonitor
                 try { SetProcessDpiAwarenessContext(new IntPtr(-4)); } catch { }
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                ViewSettings.Current = new ViewSettings();
+                ViewSettings.Current = new ViewSettings { Language = "uk" };
+                L10n.SetLanguage("uk");
                 ProductViewTest.Run();
                 SpectrumEffectsTest.Run();
                 string output = args.Length > 0 ? args[0] : Environment.CurrentDirectory;
                 Directory.CreateDirectory(output);
 
-                Render(Path.Combine(output, "compact-420x570.png"), new Size(420, 570), 0);
-                Render(Path.Combine(output, "minimum-400x520.png"), new Size(400, 520), 0);
-                Render(Path.Combine(output, "wide-760x650.png"), new Size(760, 650), 0);
-                Render(Path.Combine(output, "lower-754x648.png"), new Size(754, 648), 0);
-                Render(Path.Combine(output, "days-420x570.png"), new Size(420, 570), 1);
-            Render(Path.Combine(output, "days-760x650.png"), new Size(760, 650), 1);
-                Render(Path.Combine(output, "analytics-ocean-960x820.png"), new Size(960, 820), 0, 1, 0);
-                Render(Path.Combine(output, "analytics-solar-960x820.png"), new Size(960, 820), 0, 1, 1);
-                Render(Path.Combine(output, "presentation-fire-1240x900.png"), new Size(1240, 900), 0, 2, 2);
-                Console.WriteLine("RENDER_OK");
+                foreach (string language in new[] { "uk", "en" })
+                {
+                ViewSettings.Current.Language = language;
+                L10n.SetLanguage(language);
+                string languageOutput = Path.Combine(output, language);
+                Directory.CreateDirectory(languageOutput);
+                Render(Path.Combine(languageOutput, "compact-420x570.png"), new Size(420, 570), 0);
+                Render(Path.Combine(languageOutput, "minimum-400x520.png"), new Size(400, 520), 0);
+                Render(Path.Combine(languageOutput, "wide-760x650.png"), new Size(760, 650), 0);
+                Render(Path.Combine(languageOutput, "lower-754x648.png"), new Size(754, 648), 0);
+                Render(Path.Combine(languageOutput, "days-420x570.png"), new Size(420, 570), 1);
+                Render(Path.Combine(languageOutput, "days-760x650.png"), new Size(760, 650), 1);
+                Render(Path.Combine(languageOutput, "analytics-ocean-960x820.png"), new Size(960, 820), 0, 1, 0);
+                Render(Path.Combine(languageOutput, "analytics-solar-960x820.png"), new Size(960, 820), 0, 1, 1);
+                Render(Path.Combine(languageOutput, "presentation-fire-1240x900.png"), new Size(1240, 900), 0, 2, 2);
+                }
+                Console.WriteLine("RENDER_OK cases=18 languages=uk,en");
                 return 0;
             }
             catch (Exception ex)
@@ -119,6 +127,20 @@ namespace CodexTokenMonitor
                 throw new InvalidOperationException("Second active agent card is missing.");
             if (view == 0)
             {
+                foreach (AgentMiniCard card in cards)
+                using (Graphics graphics = card.CreateGraphics())
+                {
+                    string text; Font font; Rectangle contextBounds, agentBounds;
+                    card.GetContextLayout(graphics, out text, out font, out contextBounds, out agentBounds);
+                    using (font)
+                    {
+                        Size measured = TextRenderer.MeasureText(graphics, text, font,
+                            new Size(Int32.MaxValue, Int32.MaxValue), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine);
+                        if (!text.EndsWith("%", StringComparison.Ordinal) || measured.Width > contextBounds.Width - 2 || measured.Height > contextBounds.Height
+                            || contextBounds.Right > card.ClientSize.Width || agentBounds.Right > contextBounds.Left)
+                            throw new InvalidOperationException("Agent context percentage is clipped or overlaps: " + text + ", needs " + measured + ", bounds=" + contextBounds);
+                    }
+                }
                 FieldInfo tokenBarField = typeof(MainForm).GetField("_tokenBar", BindingFlags.Instance | BindingFlags.NonPublic);
                 TokenBar tokenBar = (TokenBar)tokenBarField.GetValue(form);
                 FieldInfo contextChartField = typeof(MainForm).GetField("_contextChart", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -140,8 +162,9 @@ namespace CodexTokenMonitor
                 Label taskTokens = (Label)typeof(MainForm).GetField("_taskTokens", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(form);
                 if (taskCaption.Visible || taskTokens.Visible) throw new InvalidOperationException("Hero still duplicates token usage.");
                 if (typeof(MainForm).GetField("_sessionUsageCard", BindingFlags.Instance | BindingFlags.NonPublic) != null || typeof(MainForm).GetField("_contextCard", BindingFlags.Instance | BindingFlags.NonPublic) != null) throw new InvalidOperationException("Legacy metric cards remain wired into the live screen.");
-                if (tokenBar.Trend != "Δ5ХВ +1.24M") throw new InvalidOperationException("Five-minute token delta is not calculated from rolling samples: " + tokenBar.Trend);
-                foreach (string fieldName in new[] { "_liveTab", "_daysTab" })
+                string expectedTrend = L10n.Language == "uk" ? "Δ5ХВ +1,24млн" : "Δ5MIN +1.24M";
+                if (tokenBar.Trend != expectedTrend) throw new InvalidOperationException("Five-minute token delta is not calculated from rolling samples: " + tokenBar.Trend);
+                foreach (string fieldName in new[] { "_liveTab", "_daysTab", "_pin" })
                 {
                     Button navigation = (Button)typeof(MainForm).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(form);
                     Size measured = TextRenderer.MeasureText(navigation.Text, navigation.Font, new Size(Int32.MaxValue, Int32.MaxValue), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine);
@@ -159,9 +182,10 @@ namespace CodexTokenMonitor
 
             if (view == 1)
             {
+                AssertAnalyticsTextFits(form);
                 FieldInfo olderField = typeof(MainForm).GetField("_loadOlderDays", BindingFlags.Instance | BindingFlags.NonPublic);
                 Button older = (Button)olderField.GetValue(form);
-                if (!older.Enabled || !older.Visible || older.Text != "ДАВНІШІ") throw new InvalidOperationException("Days older button is not ready.");
+                if (!older.Enabled || !older.Visible || older.Text != (L10n.Language == "uk" ? "ДАВНІШІ" : "OLDER")) throw new InvalidOperationException("Days older button is not ready.");
             }
 
             FieldInfo minimizeField = typeof(MainForm).GetField("_minimize", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -170,7 +194,7 @@ namespace CodexTokenMonitor
             if (form.WindowState != FormWindowState.Minimized) throw new InvalidOperationException("Minimize button did not minimize the window.");
             form.WindowState = FormWindowState.Normal;
             form.Close();
-            Console.WriteLine("RENDER_CASE_OK " + Path.GetFileName(path) + " size=" + form.ClientSize);
+            Console.WriteLine("RENDER_CASE_OK " + L10n.Language + "/" + Path.GetFileName(path) + " size=" + form.ClientSize);
             }
         }
 
@@ -197,6 +221,26 @@ namespace CodexTokenMonitor
                             + "px, has " + (control.ClientSize.Height - inset) + "px.");
                 }
                 AssertVisibleControlTextFitsVertically(control);
+            }
+        }
+
+        private static void AssertAnalyticsTextFits(MainForm form)
+        {
+            DataGridView grid = (DataGridView)typeof(MainForm).GetField("_days", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(form);
+            foreach (DataGridViewColumn column in grid.Columns)
+            {
+                Font font = column.HeaderCell.InheritedStyle.Font ?? grid.Font;
+                Size measured = TextRenderer.MeasureText(column.HeaderText, font, new Size(Int32.MaxValue, Int32.MaxValue), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine);
+                if (measured.Width > column.Width - 10 || measured.Height > grid.ColumnHeadersHeight - 6)
+                    throw new InvalidOperationException("Analytics header is clipped or wraps: " + column.HeaderText + " needs " + measured + ", column=" + column.Width + "x" + grid.ColumnHeadersHeight);
+                foreach (DataGridViewRow row in grid.Rows)
+                {
+                    DataGridViewCell cell = row.Cells[column.Index];
+                    string text = Convert.ToString(cell.Value);
+                    Size cellText = TextRenderer.MeasureText(text, cell.InheritedStyle.Font ?? grid.Font, new Size(Int32.MaxValue, Int32.MaxValue), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine);
+                    if (cellText.Width > column.Width - 10)
+                        throw new InvalidOperationException("Analytics cell is clipped: " + text + " needs " + cellText.Width + "px, column=" + column.Width);
+                }
             }
         }
 

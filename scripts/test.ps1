@@ -25,6 +25,8 @@ if ($LASTEXITCODE -ne 0) { throw "Crash gate failed with exit code $LASTEXITCODE
 if ($LASTEXITCODE -ne 0) { throw "Dashboard gate failed with exit code $LASTEXITCODE" }
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'multi-agent-test.ps1')
 if ($LASTEXITCODE -ne 0) { throw "Multi-agent gate failed with exit code $LASTEXITCODE" }
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'localization-test.ps1')
+if ($LASTEXITCODE -ne 0) { throw "Localization gate failed with exit code $LASTEXITCODE" }
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'render-test.ps1')
 if ($LASTEXITCODE -ne 0) { throw "Render gate failed with exit code $LASTEXITCODE" }
 & node (Join-Path $projectRoot 'vscode-autostart\test.cjs')

@@ -279,14 +279,14 @@ namespace CodexTokenMonitor
             if (compact)
             {
                 int halfWidth = (Width - P(28)) / 2;
-                DrawHeadline(e.Graphics, "● " + RunningSessions + " АКТИВНІ", new Rectangle(P(10), P(4), halfWidth, P(16)), RunningSessions > 0 ? Theme.Green : Theme.Muted);
-                DrawHeadline(e.Graphics, "СЬОГОДНІ " + FormatUtil.Tokens(Usage.Total), new Rectangle(P(18) + halfWidth, P(4), halfWidth, P(16)), Theme.Cyan);
+                DrawHeadline(e.Graphics, L10n.F("UI.ActiveCount", RunningSessions), new Rectangle(P(10), P(4), halfWidth, P(16)), RunningSessions > 0 ? Theme.Green : Theme.Muted);
+                DrawHeadline(e.Graphics, L10n.F("UI.TodayTotal", FormatUtil.Tokens(Usage.Total)), new Rectangle(P(18) + halfWidth, P(4), halfWidth, P(16)), Theme.Cyan);
                 DrawHeadline(e.Graphics, "API ≈ " + FormatUtil.ApiValue(ApiValue), new Rectangle(P(10), P(21), Width - P(20), P(16)), Theme.Green);
             }
             else
             {
-                DrawHeadline(e.Graphics, "● " + RunningSessions + " АКТИВНІ", new Rectangle(P(10), P(9), topWidth, P(20)), RunningSessions > 0 ? Theme.Green : Theme.Muted);
-                DrawHeadline(e.Graphics, "СЬОГОДНІ " + FormatUtil.Tokens(Usage.Total), new Rectangle(P(10) + topWidth, P(9), topWidth, P(20)), Theme.Cyan);
+                DrawHeadline(e.Graphics, L10n.F("UI.ActiveCount", RunningSessions), new Rectangle(P(10), P(9), topWidth, P(20)), RunningSessions > 0 ? Theme.Green : Theme.Muted);
+                DrawHeadline(e.Graphics, L10n.F("UI.TodayTotal", FormatUtil.Tokens(Usage.Total)), new Rectangle(P(10) + topWidth, P(9), topWidth, P(20)), Theme.Cyan);
                 DrawHeadline(e.Graphics, "API ≈ " + FormatUtil.ApiValue(ApiValue), new Rectangle(P(10) + topWidth * 2, P(9), Width - P(20) - topWidth * 2, P(20)), Theme.Green);
             }
 
@@ -296,7 +296,7 @@ namespace CodexTokenMonitor
             if (limits.Count == 0)
             {
                 using (Font font = new Font(Font.FontFamily, 6.5f * LayoutScale, FontStyle.Regular))
-                    TextRenderer.DrawText(e.Graphics, "Ліміти ще не передано • лише виміряні дані", font, new Rectangle(P(10), compact ? P(39) : P(34), Width - P(20), P(16)), Theme.Muted, TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
+                    TextRenderer.DrawText(e.Graphics, L10n.T("UI.LimitUnavailable"), font, new Rectangle(P(10), compact ? P(39) : P(34), Width - P(20), P(16)), Theme.Muted, TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
             }
             else
             {
@@ -321,26 +321,26 @@ namespace CodexTokenMonitor
 
         private static string LimitText(RateLimitView limit)
         {
-            string window = limit.WindowMinutes <= 360 ? "5 ГОД" : limit.WindowMinutes >= 9000 ? "ТИЖДЕНЬ" : limit.WindowMinutes + " ХВ";
+            string window = limit.WindowMinutes <= 360 ? L10n.T("UI.LimitFiveHours") : limit.WindowMinutes >= 9000 ? L10n.T("UI.LimitWeek") : L10n.F("UI.LimitMinutes", limit.WindowMinutes);
             string reset = "";
             if (limit.ResetsLocal.HasValue && limit.WindowMinutes <= 360)
             {
                 TimeSpan remaining = limit.ResetsLocal.Value - DateTime.Now;
                 if (remaining < TimeSpan.Zero) remaining = TimeSpan.Zero;
                 reset = remaining.TotalHours >= 1
-                    ? " · скидання через " + (int)remaining.TotalHours + "г " + remaining.Minutes + "хв"
-                    : " · скидання через " + Math.Max(1, (int)Math.Ceiling(remaining.TotalMinutes)) + "хв";
+                    ? L10n.F("UI.ResetHours", (int)remaining.TotalHours, remaining.Minutes)
+                    : L10n.F("UI.ResetMinutes", Math.Max(1, (int)Math.Ceiling(remaining.TotalMinutes)));
             }
             else if (limit.ResetsLocal.HasValue)
             {
-                reset = " · до " + limit.ResetsLocal.Value.ToString("d MMM", System.Globalization.CultureInfo.GetCultureInfo("uk-UA"));
+                reset = L10n.F("UI.ResetDate", limit.ResetsLocal.Value.ToString("d MMM", L10n.Culture));
             }
-            return window + " " + (100 - limit.UsedPercent) + "% ЛИШИЛОСЬ" + reset;
+            return L10n.F("UI.LimitRemaining", window, 100 - limit.UsedPercent, reset);
         }
 
         private static string CompactLimitText(RateLimitView limit)
         {
-            string window = limit.WindowMinutes <= 360 ? "5Г" : limit.WindowMinutes >= 9000 ? "ТИЖДЕНЬ" : limit.WindowMinutes + "ХВ";
+            string window = limit.WindowMinutes <= 360 ? L10n.T("UI.LimitFiveHoursShort") : limit.WindowMinutes >= 9000 ? L10n.T("UI.LimitWeek") : L10n.F("UI.LimitMinutesShort", limit.WindowMinutes);
             return window + " " + (100 - limit.UsedPercent) + "%";
         }
 
@@ -417,24 +417,25 @@ namespace CodexTokenMonitor
             if (Session == null) return;
             TokenUsage task = Session.CurrentOrLastTask == null ? new TokenUsage() : Session.CurrentOrLastTask.Usage;
             bool narrow = Width < P(160);
-            string agent = narrow ? "#" + AgentNumber : "АГЕНТ " + AgentNumber;
+            string agent = narrow ? "#" + AgentNumber : L10n.F("UI.AgentNumber", AgentNumber);
             int contextPercent = FormatUtil.ContextPercent(Session.CurrentContext, Session.ModelContextWindow);
-            string context = contextPercent < 0 ? "CTX —" : "CTX " + contextPercent + "%";
             Color contextColor = contextPercent < 0 ? Theme.Muted : Theme.ContextColor(Session.CurrentContext.Total);
-            int contextWidth = P(narrow ? 48 : 58);
-            int contextX = Width - contextWidth - P(8);
-            ContextSculpture.DrawToken(e.Graphics, new Rectangle(P(7), P(3), P(20), P(20)), accent, (Session != null && Session.IsRunning ? SpectrumFx.Phase * .1 : 0) + AgentNumber);
-            Rectangle statusRect = new Rectangle(P(28), P(5), Math.Max(P(18), contextX - P(31)), P(16));
-            Rectangle contextRect = new Rectangle(contextX, P(4), contextWidth, P(18));
-            using (Font statusFont = new Font(Font.FontFamily, 6f * LayoutScale, FontStyle.Bold))
-                TextRenderer.DrawText(e.Graphics, agent, statusFont, statusRect, Session.IsRunning ? Theme.Green : Theme.Orange, TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
-            using (Font contextFont = new Font(Font.FontFamily, (narrow ? 5.75f : 6.25f) * LayoutScale, FontStyle.Bold))
+            string context;
+            Font fittedContextFont;
+            Rectangle contextRect, statusRect;
+            GetContextLayout(e.Graphics, out context, out fittedContextFont, out contextRect, out statusRect);
+            using (Font contextFont = fittedContextFont)
+            {
+                ContextSculpture.DrawToken(e.Graphics, new Rectangle(P(7), P(3), P(20), P(20)), accent, (Session != null && Session.IsRunning ? SpectrumFx.Phase * .1 : 0) + AgentNumber);
+                using (Font statusFont = new Font(Font.FontFamily, 6f * LayoutScale, FontStyle.Bold))
+                    TextRenderer.DrawText(e.Graphics, agent, statusFont, statusRect, Session.IsRunning ? Theme.Green : Theme.Orange, TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
                 TextRenderer.DrawText(e.Graphics, context, contextFont, contextRect, contextColor, TextFormatFlags.Right | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
+            }
             using (Font titleFont = new Font(Font.FontFamily, 8f * LayoutScale, FontStyle.Bold))
-                TextRenderer.DrawText(e.Graphics, Session.Title, titleFont, new Rectangle(P(9), P(23), Width - P(18), P(19)), Theme.Text, TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
+                TextRenderer.DrawText(e.Graphics, Session.DisplayTitle, titleFont, new Rectangle(P(9), P(23), Width - P(18), P(19)), Theme.Text, TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
             using (Font metaFont = new Font(Font.FontFamily, 6.5f * LayoutScale))
             {
-                string summary = "ОСТ. " + FormatUtil.RelativeAgeShort(Session.LastActivityLocal);
+                string summary = L10n.F("UI.LastActivityShort", FormatUtil.RelativeAgeShort(Session.LastActivityLocal));
                 string model = FormatUtil.CompactModelName(Session.CurrentModel);
                 Rectangle row = new Rectangle(P(9), P(44), Width - P(18), P(16));
                 Size modelSize = TextRenderer.MeasureText(e.Graphics, model, metaFont, new Size(Int32.MaxValue, Int32.MaxValue), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine);
@@ -451,6 +452,37 @@ namespace CodexTokenMonitor
             return Math.Max(1, (int)Math.Round(value * LayoutScale));
         }
 
+        private Font FitContextFont(Graphics graphics, string text, int width, float maximum)
+        {
+            for (float size = maximum; size >= 4.5f; size -= .25f)
+            {
+                Font candidate = new Font(Font.FontFamily, size * LayoutScale, FontStyle.Bold);
+                int measured = TextRenderer.MeasureText(graphics, text, candidate,
+                    new Size(Int32.MaxValue, Int32.MaxValue), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width;
+                if (measured <= width - P(2)) return candidate;
+                candidate.Dispose();
+            }
+            return new Font(Font.FontFamily, 4.5f * LayoutScale, FontStyle.Bold);
+        }
+
+        // The painter and render checks share the same measured geometry. The caller
+        // owns and disposes the returned font.
+        internal void GetContextLayout(Graphics graphics, out string text, out Font font,
+            out Rectangle contextBounds, out Rectangle agentBounds)
+        {
+            bool narrow = Width < P(160);
+            int percent = Session == null ? -1 : FormatUtil.ContextPercent(Session.CurrentContext, Session.ModelContextWindow);
+            text = L10n.T("UI.ContextNarrow") + (percent < 0 ? " —" : " " + percent + "%");
+            int maximumWidth = Math.Max(P(40), Width - P(narrow ? 58 : 112));
+            font = FitContextFont(graphics, text, maximumWidth, narrow ? 5.75f : 6.25f);
+            int measured = TextRenderer.MeasureText(graphics, text, font,
+                new Size(Int32.MaxValue, Int32.MaxValue), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width;
+            int width = Math.Min(maximumWidth, Math.Max(P(48), measured + P(2)));
+            int left = Width - width - P(8);
+            contextBounds = new Rectangle(left, P(4), width, P(18));
+            agentBounds = new Rectangle(P(28), P(5), Math.Max(P(18), left - P(31)), P(16));
+        }
+
         private static GraphicsPath Rounded(Rectangle bounds, int radius)
         {
             int diameter = radius * 2;
@@ -465,11 +497,7 @@ namespace CodexTokenMonitor
 
         private static string CompactTokens(long value)
         {
-            long absolute = Math.Abs(value);
-            if (absolute >= 1000000000L) return (value / 1000000000d).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "B";
-            if (absolute >= 1000000L) return (value / 1000000d).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "M";
-            if (absolute >= 1000L) return (value / 1000d).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "K";
-            return value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return FormatUtil.Tokens(value);
         }
     }
 
@@ -484,6 +512,8 @@ namespace CodexTokenMonitor
         private string _selectedSessionId = "";
         private string _sessionSignature = "";
         private string _daysSignature = "";
+        private bool _refreshingLanguage;
+        private string _activityMessageKey = "";
 
         private PictureBox _brandIcon;
         private Label _appTitle;
@@ -526,6 +556,7 @@ namespace CodexTokenMonitor
 
         public MainForm(string[] args)
         {
+            L10n.SetLanguage(ViewSettings.Current.Language);
             _settings = AppSettings.Load();
             _engine = new SessionEngine(args);
             InitializeWindow();
@@ -537,10 +568,12 @@ namespace CodexTokenMonitor
             _engine.SnapshotReady += EngineSnapshotReady;
             ApplySnapshot(_engine.Latest);
             _displayMotion = new SpectrumMotion(this, _contextChart, _activeStrip, _today);
+            _contextChart.AccessibleDescription = L10n.T("UI.ContextTip") + " " + L10n.T("Appearance.ContextHelp");
             _footer.Cursor = Cursors.Hand;
             _footer.Click += delegate { _displayMotion.ShowMenu(_footer); };
-            _tips.SetToolTip(_footer, "Налаштування вигляду. Ctrl+1 / Ctrl+2 / Ctrl+3 — режими; Ctrl+M — рух.");
+            _tips.SetToolTip(_footer, L10n.T("UI.AppearanceTip"));
             ApplyDisplayOptions(!System.IO.File.Exists(ViewSettings.FilePath));
+            L10n.LanguageChanged += OnLanguageChanged;
         }
 
         private void InitializeWindow()
@@ -574,26 +607,26 @@ namespace CodexTokenMonitor
                 TabStop = false
             };
             _appTitle = MakeLabel("CODEX TOKEN MONITOR", 10f, FontStyle.Bold, Theme.Text);
-            _activity = MakeLabel("Пошук сесій…", 8f, FontStyle.Regular, Theme.Muted);
+            _activity = MakeLabel(L10n.T("UI.Searching"), 8f, FontStyle.Regular, Theme.Muted);
             _activity.Font = new Font("Segoe UI", 8f, FontStyle.Bold);
             _refresh = MakeButton("↻");
-            _pin = MakeButton("ЗВЕРХ");
+            _pin = MakeButton(L10n.T("UI.PinOn"));
             _minimize = MakeButton("—");
             _close = MakeButton("×");
-            _liveTab = MakeButton("ЗАРАЗ");
-            _daysTab = MakeButton("АНАЛІТИКА");
+            _liveTab = MakeButton(L10n.T("UI.LiveTab"));
+            _daysTab = MakeButton(L10n.T("UI.AnalyticsTab"));
             ((AuroraButton)_liveTab).Accent = Theme.Cyan;
             ((AuroraButton)_daysTab).Accent = SpectrumFx.Gold;
             _today = new TodayStrip { Font = Font };
             _livePanel = new Panel { BackColor = Theme.Background };
             _livePanel.Controls.Add(_overview);
             _daysPanel = new Panel { BackColor = Theme.Background, Visible = false };
-            _footer = MakeLabel("Лише локально • без API-ключа", 8f, FontStyle.Regular, Theme.Muted);
+            _footer = MakeLabel(L10n.T("UI.LocalOnly"), 8f, FontStyle.Regular, Theme.Muted);
 
             Controls.AddRange(new Control[] { _brandIcon, _appTitle, _activity, _refresh, _pin, _minimize, _close, _liveTab, _daysTab, _today, _livePanel, _daysPanel, _footer });
 
-            _refresh.Click += delegate { _activity.Text = "Оновлення…"; _engine.RefreshNow(); };
-            _pin.Click += delegate { TopMost = !TopMost; UpdatePinButton(); };
+            _refresh.Click += delegate { _activityMessageKey = "UI.Refreshing"; _activity.Text = L10n.T(_activityMessageKey); _engine.RefreshNow(); };
+            _pin.Click += delegate { TopMost = !TopMost; UpdatePinButton(); LayoutControls(); };
             _minimize.Click += delegate { WindowState = FormWindowState.Minimized; };
             _close.Click += delegate { Close(); };
             _appTitle.MouseDown += BeginWindowDrag;
@@ -601,11 +634,11 @@ namespace CodexTokenMonitor
             _activity.MouseDown += BeginWindowDrag;
             _liveTab.Click += delegate { SetMode(false); };
             _daysTab.Click += delegate { SetView(1); };
-            _tips.SetToolTip(_refresh, "Оновити зараз");
-            _tips.SetToolTip(_pin, "Завжди поверх інших вікон");
-            _tips.SetToolTip(_minimize, "Згорнути");
-            _tips.SetToolTip(_close, "Закрити");
-            _today.AccessibleDescription = "Режим підписки: API-оцінка є орієнтиром, а не списанням. Оцінка Standard для короткого контексту; режим обробки не враховується. Тарифи станом на " + PriceCatalog.RateDate + ". * = часткова оцінка через невідомий тариф моделі.";
+            _tips.SetToolTip(_refresh, L10n.T("UI.RefreshTip"));
+            _tips.SetToolTip(_pin, L10n.T("UI.PinTip"));
+            _tips.SetToolTip(_minimize, L10n.T("UI.MinimizeTip"));
+            _tips.SetToolTip(_close, L10n.T("UI.CloseTip"));
+            _today.AccessibleDescription = L10n.F("UI.SubscriptionTip", PriceCatalog.RateDate);
             _close.ForeColor = Theme.Red;
             _close.FlatAppearance.BorderColor = Theme.Red;
             _pin.Font = new Font("Segoe UI", 7f, FontStyle.Bold);
@@ -648,13 +681,13 @@ namespace CodexTokenMonitor
 
             _hero = new AuroraPanel { BackColor = Theme.Panel, Accent = Theme.Orange, ShowToken = true };
             
-            _badge = MakeLabel("WAITING", 8f, FontStyle.Bold, Theme.Muted);
-            _taskTitle = MakeLabel("Сесій Codex ще немає", 11f, FontStyle.Bold, Theme.Text);
+            _badge = MakeLabel(L10n.T("UI.Waiting"), 8f, FontStyle.Bold, Theme.Muted);
+            _taskTitle = MakeLabel(L10n.T("UI.NoSessions"), 11f, FontStyle.Bold, Theme.Text);
             _taskTitle.AutoEllipsis = true;
             _repository = MakeLabel("", 8f, FontStyle.Regular, Theme.Muted);
             _repository.AutoEllipsis = true;
             _taskTokens = MakeLabel("—", 20f, FontStyle.Bold, Theme.Cyan);
-            _taskCaption = MakeLabel("ТОКЕНИ ЗАВДАННЯ", 8f, FontStyle.Bold, Theme.Muted);
+            _taskCaption = MakeLabel(L10n.T("UI.TaskTokens"), 8f, FontStyle.Bold, Theme.Muted);
             _taskTokens.Visible = false;
             _taskCaption.Visible = false;
             _taskTime = MakeLabel("", 8f, FontStyle.Regular, Theme.Muted);
@@ -664,16 +697,16 @@ namespace CodexTokenMonitor
             _badge.AutoEllipsis = true;
             _tokenBar = new TokenBar { Font = Font };
             _contextChart = new ContextChart { Font = Font };
-            _tokenBar.AccessibleDescription = "Δ5ХВ з’являється після накопичення п’яти хвилин локальних вимірювань.";
-            _contextChart.AccessibleDescription = "Історія заповнення контекстного вікна вибраного агента.";
+            _tokenBar.AccessibleDescription = L10n.T("UI.TrendTip");
+            _contextChart.AccessibleDescription = L10n.T("UI.ContextTip");
             _livePanel.Controls.AddRange(new Control[] { _activeStrip, _sessions, _previous, _next, _hero, _tokenBar, _contextChart });
         }
 
         private void BuildDaysPanel()
         {
-            _daysHeader = MakeLabel("ІСТОРІЯ ЗА ДНЯМИ", 8f, FontStyle.Bold, Theme.Muted);
+            _daysHeader = MakeLabel(L10n.T("UI.DaysHistory"), 8f, FontStyle.Bold, Theme.Muted);
             _daysHeader.TextAlign = ContentAlignment.MiddleLeft;
-            _loadOlderDays = MakeButton("ДАВНІШІ");
+            _loadOlderDays = MakeButton(L10n.T("UI.Older"));
             _loadOlderDays.Font = new Font("Segoe UI", 7f, FontStyle.Bold);
             _loadOlderDays.Click += delegate { BeginLoadOlder(); };
             _days = new DataGridView
@@ -704,15 +737,19 @@ namespace CodexTokenMonitor
             _days.ColumnHeadersDefaultCellStyle.BackColor = Theme.Background;
             _days.ColumnHeadersDefaultCellStyle.ForeColor = Theme.Muted;
             _days.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 7.5f, FontStyle.Bold);
-            _days.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "ДЕНЬ", Width = 82 });
-            _days.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "ЗАВД.", Width = 52, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
-            _days.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "ТОКЕНИ", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, MinimumWidth = 72, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
-            _days.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "API-ОЦІНКА", Width = 88, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight, ForeColor = Theme.Green } });
+            _days.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False;
+            _days.DefaultCellStyle.WrapMode = DataGridViewTriState.False;
+            _days.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = L10n.T("UI.DayColumn"), Width = 82 });
+            _days.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = L10n.T("UI.TasksColumn"), Width = 52, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
+            _days.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = L10n.T("UI.TokensColumn"), AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, MinimumWidth = 72, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
+            _days.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = L10n.T("UI.ApiColumn"), Width = 88, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight, ForeColor = Theme.Green } });
+            foreach (DataGridViewColumn column in _days.Columns)
+                column.SortMode = DataGridViewColumnSortMode.NotSortable;
             _days.SelectionChanged += delegate { UpdateDayDetail(); };
 
             _dayDetail = new AuroraPanel { BackColor = Theme.Panel, Accent = SpectrumFx.Gold };
             
-            _dayTitle = MakeLabel("Виберіть день", 9f, FontStyle.Bold, Theme.Text);
+            _dayTitle = MakeLabel(L10n.T("UI.ChooseDay"), 9f, FontStyle.Bold, Theme.Text);
             _dayMeta = MakeLabel("", 8f, FontStyle.Regular, Theme.Muted);
             _dayMeta.AutoEllipsis = true;
             _dayValue = MakeLabel("", 9f, FontStyle.Bold, Theme.Green);
@@ -763,19 +800,24 @@ namespace CodexTokenMonitor
             int margin = S(14, scale);
             _brandIcon.SetBounds(margin, S(2, scale), S(24, scale), S(24, scale));
             int titleLeft = S(44, scale);
-            _appTitle.SetBounds(titleLeft, S(2, scale), Math.Max(S(100, scale), width - S(228, scale)), S(24, scale));
-            _activity.SetBounds(margin, S(26, scale), width - S(186, scale), S(21, scale));
+            UpdatePinButton();
+            int pinWidth = Math.Max(S(56, scale), TextRenderer.MeasureText(_pin.Text, _pin.Font,
+                new Size(Int32.MaxValue, Int32.MaxValue), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width + S(18, scale));
+            int pinLeft = width - S(84, scale) - pinWidth;
+            int refreshLeft = pinLeft - S(36, scale);
+            _appTitle.SetBounds(titleLeft, S(2, scale), Math.Max(S(100, scale), refreshLeft - S(8, scale) - titleLeft), S(24, scale));
+            _activity.SetBounds(margin, S(26, scale), refreshLeft - S(8, scale) - margin, S(21, scale));
             _close.SetBounds(width - S(43, scale), S(9, scale), S(29, scale), S(27, scale));
             _minimize.SetBounds(width - S(78, scale), S(9, scale), S(29, scale), S(27, scale));
-            _pin.SetBounds(width - S(140, scale), S(9, scale), S(56, scale), S(27, scale));
-            _refresh.SetBounds(width - S(176, scale), S(9, scale), S(30, scale), S(27, scale));
+            _pin.SetBounds(pinLeft, S(9, scale), pinWidth, S(27, scale));
+            _refresh.SetBounds(refreshLeft, S(9, scale), S(30, scale), S(27, scale));
             bool narrowNav = width < 700;
             _appTitle.Text = width < 700 ? "CODEX TOKEN" : "CODEX TOKEN MONITOR";
             FitLabel(_appTitle, 10f * scale, 7f * scale, FontStyle.Bold);
             FitLabel(_activity, 8f * scale, 6f * scale, FontStyle.Bold);
-            _pin.Text = narrowNav ? "PIN" : "ЗВЕРХ";
-            _liveTab.Text = "ЗАРАЗ";
-            _daysTab.Text = "АНАЛІТИКА";
+            UpdatePinButton();
+            _liveTab.Text = L10n.T("UI.LiveTab");
+            _daysTab.Text = L10n.T("UI.AnalyticsTab");
             int tabsLeft = margin;
             int gap = S(narrowNav ? 2 : 4, scale);
             int liveWidth = S(76, scale);
@@ -889,7 +931,7 @@ namespace CodexTokenMonitor
             }
             int gap = S(count > 4 ? 4 : 6, scale);
             int visibleColumns = Math.Min(5, count);
-            int cardWidth = Math.Max(S(count > 4 ? 68 : 90, scale), (_activeStrip.ClientSize.Width - gap * (visibleColumns - 1) - S(2, scale)) / visibleColumns);
+            int cardWidth = Math.Max(S(110, scale), (_activeStrip.ClientSize.Width - gap * (visibleColumns - 1) - S(2, scale)) / visibleColumns);
             int x = 0;
             foreach (AgentMiniCard card in _agentCards)
             {
@@ -968,14 +1010,58 @@ namespace CodexTokenMonitor
             int height = _daysPanel.ClientSize.Height;
             int detailHeight = 76;
             int olderWidth = 94;
+            foreach (string key in new[] { "UI.Older", "UI.Loading", "UI.AllLoaded" })
+                olderWidth = Math.Max(olderWidth, TextRenderer.MeasureText(L10n.T(key), _loadOlderDays.Font,
+                    new Size(Int32.MaxValue, Int32.MaxValue), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width + 18);
             _daysHeader.SetBounds(6, 3, Math.Max(100, width - olderWidth - 13), 29);
             _loadOlderDays.SetBounds(width - olderWidth, 3, olderWidth, 29);
             _loadOlderDays.BringToFront();
             _days.SetBounds(0, 40, width, Math.Max(170, height - 40 - detailHeight - 7));
+            FitAnalyticsColumns();
             _dayDetail.SetBounds(0, height - detailHeight - 4, width, detailHeight);
             _dayTitle.SetBounds(10, 7, width - 130, 24);
             _dayMeta.SetBounds(10, 37, width - 20, 25);
             _dayValue.SetBounds(width - 120, 7, 110, 24);
+        }
+
+        private void FitAnalyticsColumns()
+        {
+            if (_days.ClientSize.Width <= 0 || _days.Columns.Count != 4) return;
+            int available = _days.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - 2;
+            int[] widths = new int[4];
+            Font body = null, header = null;
+            // Measure actual translated headers and visible data together. Shrink the
+            // narrow grid font only when their combined minimum widths require it.
+            for (float size = 8.5f; size >= 6f; size -= .25f)
+            {
+                if (body != null) body.Dispose();
+                if (header != null) header.Dispose();
+                body = new Font(_days.Font.FontFamily, size);
+                header = new Font(_days.Font.FontFamily, Math.Min(7.5f, size), FontStyle.Bold);
+                for (int column = 0; column < widths.Length; column++)
+                {
+                    widths[column] = TextRenderer.MeasureText(_days.Columns[column].HeaderText, header,
+                        new Size(Int32.MaxValue, Int32.MaxValue), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width + 14;
+                    foreach (DataGridViewRow row in _days.Rows)
+                    {
+                        string text = Convert.ToString(row.Cells[column].Value, L10n.Culture);
+                        widths[column] = Math.Max(widths[column], TextRenderer.MeasureText(text, body,
+                            new Size(Int32.MaxValue, Int32.MaxValue), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width + 14);
+                    }
+                }
+                widths[2] = Math.Max(72, widths[2]);
+                if (widths.Sum() <= available) break;
+            }
+            Font oldBody = _days.DefaultCellStyle.Font;
+            Font oldHeader = _days.ColumnHeadersDefaultCellStyle.Font;
+            _days.DefaultCellStyle.Font = body;
+            _days.ColumnHeadersDefaultCellStyle.Font = header;
+            if (oldBody != null) oldBody.Dispose();
+            if (oldHeader != null) oldHeader.Dispose();
+            _days.Columns[0].Width = widths[0];
+            _days.Columns[1].Width = widths[1];
+            _days.Columns[3].Width = widths[3];
+            _days.Columns[2].MinimumWidth = widths[2];
         }
 
         private void SetMode(bool analytics)
@@ -1007,7 +1093,69 @@ namespace CodexTokenMonitor
         {
             _pin.ForeColor = TopMost ? Theme.Cyan : Theme.Muted;
             _pin.FlatAppearance.BorderColor = TopMost ? Theme.Cyan : Theme.Border;
-            _pin.Text = TopMost ? "ЗВЕРХ" : "ЗАКРІП.";
+            _pin.Text = TopMost ? L10n.T("UI.PinOn") : L10n.T("UI.PinOff");
+        }
+
+        internal void ApplyLanguage(string language, bool persist)
+        {
+            L10n.SetLanguage(language);
+            if (persist)
+            {
+                ViewSettings.Current.Language = L10n.Language;
+                ViewSettings.Current.Save();
+            }
+        }
+
+        private void OnLanguageChanged(object sender, EventArgs e)
+        {
+            if (IsDisposed) return;
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action<object, EventArgs>(OnLanguageChanged), sender, e);
+                return;
+            }
+            // Update existing controls. Keeping their instances preserves focus, the chosen
+            // agent, the selected tab and the complete local graph history.
+            _refreshingLanguage = true;
+            Color transientActivityColor = _activity.ForeColor;
+            SuspendLayout();
+            try
+            {
+                // RemoveAll also dismisses a currently open tooltip with the old language.
+                _tips.RemoveAll();
+                _tips.SetToolTip(_footer, L10n.T("UI.AppearanceTip"));
+                _tips.SetToolTip(_refresh, L10n.T("UI.RefreshTip"));
+                _tips.SetToolTip(_pin, L10n.T("UI.PinTip"));
+                _tips.SetToolTip(_minimize, L10n.T("UI.MinimizeTip"));
+                _tips.SetToolTip(_close, L10n.T("UI.CloseTip"));
+                _contextChart.AccessibleDescription = L10n.T("UI.ContextTip") + " " + L10n.T("Appearance.ContextHelp");
+                _daysHeader.Text = L10n.T("UI.DaysHistory");
+                _days.Columns[0].HeaderText = L10n.T("UI.DayColumn");
+                _days.Columns[1].HeaderText = L10n.T("UI.TasksColumn");
+                _days.Columns[2].HeaderText = L10n.T("UI.TokensColumn");
+                _days.Columns[3].HeaderText = L10n.T("UI.ApiColumn");
+                _daysSignature = "";
+                ApplySnapshot(_snapshot);
+                if (!_daysMode) RefreshDays(true);
+                if (_activityMessageKey.Length > 0)
+                {
+                    _activity.Text = L10n.T(_activityMessageKey);
+                    _activity.ForeColor = transientActivityColor;
+                    if (_activityMessageKey == "UI.IndexingOlder")
+                    {
+                        _loadOlderDays.Text = L10n.T("UI.Loading");
+                        _loadOlderDays.Enabled = false;
+                        _tips.SetToolTip(_loadOlderDays, L10n.T("UI.IndexingOlder"));
+                    }
+                }
+                LayoutControls();
+            }
+            finally
+            {
+                _refreshingLanguage = false;
+                ResumeLayout(false);
+            }
+            Invalidate(true);
         }
 
         private void MoveSession(int direction)
@@ -1029,7 +1177,7 @@ namespace CodexTokenMonitor
             using (SolidBrush fill = new SolidBrush(background)) e.Graphics.FillRectangle(fill, e.Bounds);
             using (SolidBrush dot = new SolidBrush(session.IsRunning ? Theme.Green : session.Accent))
                 e.Graphics.FillEllipse(dot, e.Bounds.Left + 8, e.Bounds.Top + 11, 8, 8);
-            string text = session.Repository + "  ·  " + session.Title;
+            string text = session.DisplayRepository + "  ·  " + session.DisplayTitle;
             TextRenderer.DrawText(e.Graphics, text, Font, new Rectangle(e.Bounds.Left + 23, e.Bounds.Top + 3, e.Bounds.Width - 28, e.Bounds.Height - 5), Theme.Text, TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
             e.DrawFocusRectangle();
         }
@@ -1044,6 +1192,7 @@ namespace CodexTokenMonitor
         private void ApplySnapshot(MonitorSnapshot snapshot)
         {
             if (snapshot == null || IsDisposed) return;
+            if (!_refreshingLanguage) _activityMessageKey = "";
             _snapshot = snapshot;
             _today.Usage = snapshot.Today;
             _today.ApiValue = snapshot.TodayApiValue;
@@ -1053,32 +1202,32 @@ namespace CodexTokenMonitor
             _today.SecondaryLimit = snapshot.SecondaryLimit;
             _today.Invalidate();
             string limitDetails = _today.LimitTooltip();
-            _today.AccessibleDescription = "Завдань сьогодні: " + snapshot.TodayTasks + ". API ≈ базова оцінка, не списання. Тарифи: " + PriceCatalog.RateDate + "; без надбавок за довгий контекст, швидкість і інструменти." + (limitDetails.Length == 0 ? "" : "  " + limitDetails);
-            _appTitle.AccessibleDescription = String.IsNullOrEmpty(snapshot.CodexHome) ? "CODEX_HOME не знайдено" : snapshot.CodexHome;
+            _today.AccessibleDescription = L10n.F("UI.TodayTip", snapshot.TodayTasks, PriceCatalog.RateDate) + (limitDetails.Length == 0 ? "" : "  " + limitDetails);
+            _appTitle.AccessibleDescription = String.IsNullOrEmpty(snapshot.CodexHome) ? L10n.T("UI.HomeMissing") : snapshot.CodexHome;
 
             if (!String.IsNullOrEmpty(snapshot.Error))
             {
-                _activity.Text = snapshot.Error;
+                _activity.Text = snapshot.DisplayError;
                 _activity.ForeColor = Theme.Red;
             }
             else
             {
-                _activity.Text = (snapshot.RunningSessions > 0 ? "● " : "○ ") + "АКТИВНІ АГЕНТИ: " + snapshot.RunningSessions;
+                _activity.Text = (snapshot.RunningSessions > 0 ? "● " : "○ ") + L10n.F("UI.ActiveAgents", snapshot.RunningSessions);
                 _activity.ForeColor = snapshot.RunningSessions > 0 ? Theme.Green : Theme.Muted;
             }
-            _liveTab.Text = "ЗАРАЗ";
+            _liveTab.Text = L10n.T("UI.LiveTab");
             bool hasOlder = snapshot.AvailableFiles > snapshot.IndexedFiles;
             bool indexingOlder = snapshot.IndexedFiles < snapshot.IndexTarget;
             UpdateOlderButton(_loadOlderDays, snapshot, hasOlder, indexingOlder);
             string historyProgress = indexingOlder
-                ? " • indexing " + snapshot.IndexedFiles + "/" + snapshot.IndexTarget
-                : hasOlder ? " • history " + snapshot.IndexedFiles + "/" + snapshot.AvailableFiles : "";
-            _footer.Text = "⚙ Вигляд • " + snapshot.RefreshedLocal.ToString("HH:mm:ss") + historyProgress;
+                ? L10n.F("UI.IndexingProgress", snapshot.IndexedFiles, snapshot.IndexTarget)
+                : hasOlder ? L10n.F("UI.HistoryProgress", snapshot.IndexedFiles, snapshot.AvailableFiles) : "";
+            _footer.Text = L10n.F("UI.Footer", snapshot.RefreshedLocal.ToString("HH:mm:ss", L10n.Culture), historyProgress);
             UpdateSessionList();
             RebuildAgentTabs();
             UpdateLiveDetail();
 
-            string daysSignature = AuroraUi.DaysSignature(snapshot.Days);
+            string daysSignature = L10n.Language + ":" + AuroraUi.DaysSignature(snapshot.Days);
             if (daysSignature != _daysSignature)
             {
                 _daysSignature = daysSignature;
@@ -1089,8 +1238,9 @@ namespace CodexTokenMonitor
         private void BeginLoadOlder()
         {
             _loadOlderDays.Enabled = false;
-            _loadOlderDays.Text = "LOADING";
-            _activity.Text = "Indexing older history locally…";
+            _loadOlderDays.Text = L10n.T("UI.LoadingShort");
+            _activityMessageKey = "UI.IndexingOlder";
+            _activity.Text = L10n.T(_activityMessageKey);
             _activity.ForeColor = Theme.Cyan;
             _engine.LoadOlder();
         }
@@ -1099,18 +1249,18 @@ namespace CodexTokenMonitor
         {
             if (button == null) return;
             button.Enabled = hasOlder && !loading;
-            string availableText = "ДАВНІШІ";
-            button.Text = loading ? "ЗАВАНТАЖЕННЯ" : hasOlder ? availableText : "УСЕ ГОТОВО";
+            string availableText = L10n.T("UI.Older");
+            button.Text = loading ? L10n.T("UI.Loading") : hasOlder ? availableText : L10n.T("UI.AllLoaded");
             button.ForeColor = loading ? Theme.Orange : hasOlder ? Theme.Cyan : Theme.Muted;
             button.FlatAppearance.BorderColor = loading ? Theme.Orange : hasOlder ? Theme.Border : Theme.Border;
             _tips.SetToolTip(button, loading
-                ? "Індексування: " + snapshot.IndexedFiles + " із " + snapshot.IndexTarget + " запитаних журналів (усього " + snapshot.AvailableFiles + ")."
-                : hasOlder ? "Завантажити наступні 120 давніших локальних журналів сесій." : "Усі доступні локальні журнали сесій проіндексовано.");
+                ? L10n.F("UI.IndexingTip", snapshot.IndexedFiles, snapshot.IndexTarget, snapshot.AvailableFiles)
+                : hasOlder ? L10n.T("UI.OlderTip") : L10n.T("UI.AllLoadedTip"));
         }
 
         private void UpdateSessionList()
         {
-            string signature = String.Join("|", _snapshot.Sessions.Select(s => s.Id + ":" + s.Title + ":" + s.IsRunning));
+            string signature = String.Join("|", _snapshot.Sessions.Select(s => s.Id + ":" + s.DisplayTitle + ":" + s.IsRunning));
             if (signature == _sessionSignature)
             {
                 _sessions.Invalidate();
@@ -1138,30 +1288,32 @@ namespace CodexTokenMonitor
             if (session == null && _snapshot.Sessions.Count > 0) session = _snapshot.Sessions[0];
             if (session == null)
             {
-                _badge.Text = "WAITING";
+                _badge.Text = L10n.T("UI.Waiting");
                 _badge.ForeColor = Theme.Muted;
-                _taskTitle.Text = "Сесій Codex ще немає";
-                _repository.Text = "Очікуємо локальні журнали Codex";
+                _taskTitle.Text = L10n.T("UI.NoSessions");
+                _repository.Text = L10n.T("UI.AwaitingLogs");
+                _repository.AccessibleDescription = _repository.Text;
                 _taskTokens.Text = "—";
+                _taskCaption.Text = L10n.T("UI.TaskTokens");
                 _taskTime.Text = "";
                 SetCards(null, new TokenUsage());
                 return;
             }
             _selectedSessionId = session.Id;
             TaskView task = session.CurrentOrLastTask;
-            string agents = _snapshot.RunningSessions + (_snapshot.RunningSessions == 1 ? " AGENT" : " AGENTS");
+            string agents = L10n.F("UI.AgentsActive", _snapshot.RunningSessions);
             string duration = task == null ? "" : FormatUtil.Duration(task.StartedLocal, task.CompletedLocal);
-            _badge.Text = session.IsRunning ? "● ПРАЦЮЄ  •  " + duration + "  •  ост. активність: " + FormatUtil.RelativeAgeShort(session.LastActivityLocal) : session.IsStale ? "⚠ НЕАКТУАЛЬНО  •  " + agents + " АКТИВНИХ" : "ОЧІКУВАННЯ  •  " + agents + " АКТИВНИХ";
+            _badge.Text = session.IsRunning ? L10n.F("UI.RunningBadge", duration, FormatUtil.RelativeAgeShort(session.LastActivityLocal)) : session.IsStale ? L10n.F("UI.StaleBadge", agents) : L10n.F("UI.WaitingBadge", agents);
             _badge.ForeColor = session.IsRunning ? Theme.Green : session.IsStale ? Theme.Orange : session.Accent;
-            _taskTitle.Text = session.Title;
+            _taskTitle.Text = session.DisplayTitle;
             string modelMeta = FormatUtil.ModelName(session.CurrentModel) + (String.IsNullOrWhiteSpace(session.CurrentEffort) ? "" : " / " + session.CurrentEffort.ToUpperInvariant());
-            _repository.Text = session.Repository + "  •  " + modelMeta;
+            _repository.Text = session.DisplayRepository + "  •  " + modelMeta;
             _repository.AccessibleDescription = session.WorkingDirectory;
             TokenUsage taskUsage = task == null ? new TokenUsage() : task.Usage;
             _taskTokens.Text = FormatUtil.Tokens(taskUsage.Total);
             _taskTokens.ForeColor = session.Accent;
-            _taskCaption.Text = session.IsRunning ? "ПОТОЧНИЙ ЗАПУСК" : "ОСТАННІЙ ЗАПУСК";
-            _taskTime.Text = task == null ? session.LastActivityLocal.ToString("HH:mm") : duration;
+            _taskCaption.Text = session.IsRunning ? L10n.T("UI.CurrentRun") : L10n.T("UI.LastRun");
+            _taskTime.Text = task == null ? session.LastActivityLocal.ToString("HH:mm", L10n.Culture) : duration;
             SetCards(session, taskUsage);
         }
 
@@ -1200,11 +1352,11 @@ namespace CodexTokenMonitor
             _overview.Rate = UsageSignals.TokensPerMinute(_contextChart.History, SnapshotTime());
             _overview.Invalidate();
             _tokenBar.TaskUsage = session == null || session.CurrentOrLastTask == null ? null : task;
-            string detail = session == null ? "Очікуємо локальні дані сесії." : "Завдання: " + FormatUtil.Tokens(task.Total) + " токенів • Вхід: " + FormatUtil.Tokens(task.Input) + " • Вихід: " + FormatUtil.Tokens(task.Output) + " • Кеш: " + FormatUtil.Tokens(task.Cached) + " • Міркування: " + FormatUtil.Tokens(task.Reasoning) + ". Кеш входить у вхідні токени; міркування — у вихідні.";
-            _tokenBar.AccessibleDescription = detail + " API ≈ базова оцінка, не списання. Тарифи: " + PriceCatalog.RateDate + "; без надбавок за довгий контекст, швидкість і виклики інструментів.";
+            string detail = session == null ? L10n.T("UI.AwaitingData") : L10n.F("UI.TaskUsageTip", FormatUtil.Tokens(task.Total), FormatUtil.Tokens(task.Input), FormatUtil.Tokens(task.Output), FormatUtil.Tokens(task.Cached), FormatUtil.Tokens(task.Reasoning));
+            _tokenBar.AccessibleDescription = detail + L10n.F("UI.ApiTip", PriceCatalog.RateDate) + " " + L10n.T("UI.TrendTip");
             _hero.AccessibleDescription = detail;
             _tokenBar.AccessibleName = detail;
-            _overview.AccessibleDescription = detail + " Порівняння: до 20 завершених завдань цього проєкту. Швидкість — середня за останній доступний інтервал, ціль — 1 хвилина. Дані дня охоплюють проіндексовані журнали.";
+            _overview.AccessibleDescription = detail + L10n.T("UI.ComparisonTip");
             _tokenBar.Invalidate();
             _contextChart.Invalidate();
             FitLiveText();
@@ -1218,11 +1370,12 @@ namespace CodexTokenMonitor
         private static string AgentToolTip(SessionView session)
         {
             string model = session.CurrentModel + (String.IsNullOrWhiteSpace(session.CurrentEffort) ? "" : " / " + session.CurrentEffort.ToUpperInvariant());
-            return session.Title + Environment.NewLine + model + Environment.NewLine + session.WorkingDirectory;
+            return session.DisplayTitle + Environment.NewLine + model + Environment.NewLine + session.WorkingDirectory;
         }
 
         private void RecordTokenSample(SessionView session, DateTime sampledAt)
         {
+            if (_refreshingLanguage) return;
             if (session == null || String.IsNullOrWhiteSpace(session.Id)) return;
             List<UsageHistorySample> samples;
             if (!_tokenRateSamples.TryGetValue(session.Id, out samples))
@@ -1261,7 +1414,7 @@ namespace CodexTokenMonitor
             }
             if (baseline == null) return "";
             long delta = samples[samples.Count - 1].TotalTokens - baseline.TotalTokens;
-            return delta < 0 ? "" : "Δ5ХВ +" + FormatUtil.Tokens(delta);
+            return delta < 0 ? "" : L10n.F("UI.TrendPositive", FormatUtil.Tokens(delta));
         }
 
         private string FiveMinuteContextTrend(SessionView session)
@@ -1277,7 +1430,7 @@ namespace CodexTokenMonitor
             }
             if (baseline == null) return "";
             long delta = samples[samples.Count - 1].ContextUsed - baseline.ContextUsed;
-            return "Δ5ХВ " + (delta >= 0 ? "+" : "−") + FormatUtil.Tokens(Math.Abs(delta));
+            return L10n.T("UI.Trend") + (delta >= 0 ? "+" : "−") + FormatUtil.Tokens(Math.Abs(delta));
         }
 
         private void FitLiveText()
@@ -1419,6 +1572,7 @@ namespace CodexTokenMonitor
         private void RefreshDays(bool force)
         {
             if (!_daysMode && !force) return;
+            int scrollIndex = _days.FirstDisplayedScrollingRowIndex;
             DateTime? selectedDate = null;
             if (_days.SelectedRows.Count > 0)
             {
@@ -1430,14 +1584,22 @@ namespace CodexTokenMonitor
             int selectedIndex = -1;
             foreach (DayView day in _snapshot.Days.Take(366))
             {
-                string label = day.Date == DateTime.Today ? "СЬОГОДНІ" : day.Date.ToString("dd MMM yy");
-                int index = _days.Rows.Add(label, day.Tasks.ToString("N0"), FormatUtil.Tokens(day.Usage.Total), FormatUtil.ApiValue(day.ApiValue));
+                string label = day.Date == DateTime.Today ? L10n.T("UI.Today") : day.Date.ToString("dd MMM yy", L10n.Culture);
+                int index = _days.Rows.Add(label, day.Tasks.ToString("N0", L10n.Culture), FormatUtil.Tokens(day.Usage.Total), FormatUtil.ApiValue(day.ApiValue));
                 _days.Rows[index].Tag = day;
                 if (selectedDate.HasValue && selectedDate.Value == day.Date) selectedIndex = index;
             }
+            FitAnalyticsColumns();
             _days.ResumeLayout();
-            if (selectedIndex >= 0) _days.Rows[selectedIndex].Selected = true;
-            else if (_days.Rows.Count > 0) _days.Rows[0].Selected = true;
+            if (_days.Rows.Count > 0)
+            {
+                int restoredIndex = selectedIndex >= 0 ? selectedIndex : 0;
+                _days.ClearSelection();
+                _days.CurrentCell = _days.Rows[restoredIndex].Cells[0];
+                _days.Rows[restoredIndex].Selected = true;
+                if (scrollIndex >= 0 && scrollIndex < _days.Rows.Count)
+                    _days.FirstDisplayedScrollingRowIndex = scrollIndex;
+            }
             UpdateDayDetail();
             FitLabelHeights(_dayDetail);
         }
@@ -1447,17 +1609,21 @@ namespace CodexTokenMonitor
             DayView day = _days.SelectedRows.Count > 0 ? _days.SelectedRows[0].Tag as DayView : null;
             if (day == null)
             {
-                _dayTitle.Text = "Немає проіндексованих днів";
+                _dayTitle.Text = L10n.T("UI.NoDays");
                 _dayMeta.Text = "";
                 _dayValue.Text = "";
+                _dayMeta.AccessibleDescription = "";
+                _tips.SetToolTip(_dayMeta, "");
+                _tips.SetToolTip(_dayValue, "");
                 return;
             }
-            _dayTitle.Text = day.Date == DateTime.Today ? "Сьогодні • підписка" : day.Date.ToString("dddd, dd MMMM yyyy") + " • підписка";
+            _dayTitle.Text = day.Date == DateTime.Today ? L10n.T("UI.TodaySubscription") : day.Date.ToString("dddd, dd MMMM yyyy", L10n.Culture) + L10n.T("UI.SubscriptionSuffix");
             _dayValue.Text = FormatUtil.ApiValue(day.ApiValue);
-            _dayMeta.Text = day.Tasks.ToString("N0") + " завдань  •  Вхід " + FormatUtil.Tokens(day.Usage.Input) + "  •  Вихід " + FormatUtil.Tokens(day.Usage.Output) + "  •  Кеш " + FormatUtil.Tokens(day.Usage.Cached);
-            string note = "Лише API-еквівалент; підписка не тарифікується за токенами. Моделі: " + day.Models;
-            if (day.ApiValue.IsPartial) note += ". * Частково: тариф принаймні однієї моделі невідомий.";
-            _tips.SetToolTip(_dayMeta, note);
+            _dayMeta.Text = L10n.F("UI.DayUsage", day.Tasks.ToString("N0", L10n.Culture), FormatUtil.Tokens(day.Usage.Input), FormatUtil.Tokens(day.Usage.Output), FormatUtil.Tokens(day.Usage.Cached));
+            string note = L10n.F("UI.DayTip", FormatUtil.ModelList(day.Models));
+            if (day.ApiValue.IsPartial) note += L10n.T("UI.PartialNote");
+            _dayMeta.AccessibleDescription = _dayMeta.Text + Environment.NewLine + note;
+            _tips.SetToolTip(_dayMeta, _dayMeta.AccessibleDescription);
             _tips.SetToolTip(_dayValue, note);
         }
 
@@ -1544,6 +1710,16 @@ namespace CodexTokenMonitor
             _engine.Dispose();
             ViewSettings.Current.Save();
             base.OnFormClosing(e);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                L10n.LanguageChanged -= OnLanguageChanged;
+                _tips.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

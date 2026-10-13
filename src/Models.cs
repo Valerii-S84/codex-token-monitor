@@ -152,6 +152,10 @@ namespace CodexTokenMonitor
         public string TurnId = "";
         public string Title = "";
         public string Repository = "";
+        public bool IsFallbackTitle;
+        public bool IsFallbackRepository;
+        public string DisplayRepository { get { return IsFallbackRepository ? L10n.T("Engine.UnknownRepository") : Repository; } }
+        public string DisplayTitle { get { return IsFallbackTitle ? (IsFallbackRepository || String.IsNullOrEmpty(Repository) ? L10n.T("Engine.Task") : L10n.F("Engine.RepositoryTask", Repository)) : Title; } }
         public string WorkingDirectory = "";
         public string LogPath = "";
         public DateTime StartedLocal;
@@ -167,6 +171,10 @@ namespace CodexTokenMonitor
         public string Id = "";
         public string Title = "";
         public string Repository = "";
+        public bool IsFallbackTitle;
+        public bool IsFallbackRepository;
+        public string DisplayRepository { get { return IsFallbackRepository ? L10n.T("Engine.UnknownRepository") : Repository; } }
+        public string DisplayTitle { get { return IsFallbackTitle ? (IsFallbackRepository || String.IsNullOrEmpty(Repository) ? L10n.T("Engine.Task") : L10n.F("Engine.RepositoryTask", Repository)) : Title; } }
         public string WorkingDirectory = "";
         public DateTime LastActivityLocal;
         public bool IsRunning;
@@ -209,6 +217,7 @@ namespace CodexTokenMonitor
         public int AvailableFiles;
         public int IndexTarget;
         public string Error = "";
+        public string DisplayError { get { return String.IsNullOrEmpty(Error) ? "" : Error == "CODEX_HOME not found" ? L10n.T("Engine.HomeMissing") : L10n.F("Engine.ReadError", Error); } }
         public DateTime RefreshedLocal = DateTime.Now;
     }
 
@@ -216,19 +225,19 @@ namespace CodexTokenMonitor
     {
         public static string Tokens(long value)
         {
-            long abs = Math.Abs(value);
-            if (abs >= 1000000000L) return (value / 1000000000d).ToString("0.##", CultureInfo.InvariantCulture) + "B";
-            if (abs >= 1000000L) return (value / 1000000d).ToString("0.##", CultureInfo.InvariantCulture) + "M";
-            if (abs >= 1000L) return (value / 1000d).ToString("0.#", CultureInfo.InvariantCulture) + "K";
-            return value.ToString("N0", CultureInfo.CurrentCulture);
+            double abs = Math.Abs((double)value);
+            if (abs >= 1000000000L) return (value / 1000000000d).ToString("0.##", L10n.Culture) + L10n.T("Format.Billion");
+            if (abs >= 1000000L) return (value / 1000000d).ToString("0.##", L10n.Culture) + L10n.T("Format.Million");
+            if (abs >= 1000L) return (value / 1000d).ToString("0.#", L10n.Culture) + L10n.T("Format.Thousand");
+            return value.ToString("N0", L10n.Culture);
         }
 
         public static string Duration(DateTime started, DateTime? completed)
         {
             TimeSpan span = (completed ?? DateTime.Now) - started;
-            if (span.TotalHours >= 1) return ((int)span.TotalHours).ToString(CultureInfo.InvariantCulture) + "h " + span.Minutes + "m";
-            if (span.TotalMinutes >= 1) return ((int)span.TotalMinutes).ToString(CultureInfo.InvariantCulture) + "m " + span.Seconds + "s";
-            return Math.Max(0, (int)span.TotalSeconds).ToString(CultureInfo.InvariantCulture) + "s";
+            if (span.TotalHours >= 1) return ((int)span.TotalHours).ToString(L10n.Culture) + L10n.T("Format.Hour") + " " + span.Minutes.ToString(L10n.Culture) + L10n.T("Format.Minute");
+            if (span.TotalMinutes >= 1) return ((int)span.TotalMinutes).ToString(L10n.Culture) + L10n.T("Format.Minute") + " " + span.Seconds.ToString(L10n.Culture) + L10n.T("Format.Second");
+            return Math.Max(0, (int)span.TotalSeconds).ToString(L10n.Culture) + L10n.T("Format.Second");
         }
 
         public static string ApiValue(CostEstimate estimate)
@@ -237,10 +246,10 @@ namespace CodexTokenMonitor
             if (!estimate.HasKnownUsage && estimate.HasUnknownUsage) return "≈?";
             decimal value = estimate.Value;
             string amount;
-            if (value > 0m && value < 0.01m) amount = value.ToString("$0.000", CultureInfo.InvariantCulture);
-            else if (value >= 1000000m) amount = (value / 1000000m).ToString("$0.##M", CultureInfo.InvariantCulture);
-            else if (value >= 1000m) amount = (value / 1000m).ToString("$0.##K", CultureInfo.InvariantCulture);
-            else amount = value.ToString("$0.00", CultureInfo.InvariantCulture);
+            if (value > 0m && value < 0.01m) amount = "$" + value.ToString("0.000", L10n.Culture);
+            else if (value >= 1000000m) amount = "$" + (value / 1000000m).ToString("0.##", L10n.Culture) + L10n.T("Format.Million");
+            else if (value >= 1000m) amount = "$" + (value / 1000m).ToString("0.##", L10n.Culture) + L10n.T("Format.Thousand");
+            else amount = "$" + value.ToString("0.00", L10n.Culture);
             return "≈" + amount + (estimate.IsPartial ? "*" : "");
         }
 
@@ -258,35 +267,34 @@ namespace CodexTokenMonitor
 
         public static string ModelName(string model)
         {
-            return String.IsNullOrWhiteSpace(model) ? "модель невідома" : model.ToUpperInvariant();
+            return String.IsNullOrWhiteSpace(model) || model == UsageBuckets.UnknownModel ? L10n.T("Format.UnknownModel") : model;
         }
 
         public static string CompactModelName(string model)
         {
             if (String.IsNullOrWhiteSpace(model)) return "—";
-            string clean = model.Trim();
-            if (clean.StartsWith("gpt-", StringComparison.OrdinalIgnoreCase)) clean = clean.Substring(4);
-            string[] parts = clean.Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
-            for (int i = 1; i < parts.Length; i++)
-                parts[i] = parts[i].Length == 0 ? parts[i] : Char.ToUpperInvariant(parts[i][0]) + parts[i].Substring(1).ToLowerInvariant();
-            return String.Join(" ", parts);
+            return ModelName(model);
+        }
+
+        public static string ModelList(string models)
+        {
+            if (String.IsNullOrWhiteSpace(models) || models == UsageBuckets.UnknownModel) return L10n.T("Format.UnknownModel");
+            return String.Join(", ", models.Split(new[] { ", " }, StringSplitOptions.None).Select(ModelName));
         }
 
         public static string RelativeAgeShort(DateTime value)
         {
-            string age = RelativeAge(value);
-            const string suffix = " тому";
-            return age.EndsWith(suffix, StringComparison.Ordinal) ? age.Substring(0, age.Length - suffix.Length) : age;
+            TimeSpan age = DateTime.Now - value;
+            if (age.TotalSeconds < 0) age = TimeSpan.Zero;
+            if (age.TotalMinutes < 1) return Math.Max(0, (int)age.TotalSeconds).ToString(L10n.Culture) + L10n.T("Format.Second");
+            if (age.TotalHours < 1) return ((int)age.TotalMinutes).ToString(L10n.Culture) + L10n.T("Format.Minute");
+            if (age.TotalDays < 1) return ((int)age.TotalHours).ToString(L10n.Culture) + L10n.T("Format.Hour");
+            return ((int)age.TotalDays).ToString(L10n.Culture) + L10n.T("Format.Day");
         }
 
         public static string RelativeAge(DateTime value)
         {
-            TimeSpan age = DateTime.Now - value;
-            if (age.TotalSeconds < 0) age = TimeSpan.Zero;
-            if (age.TotalMinutes < 1) return Math.Max(0, (int)age.TotalSeconds) + "с тому";
-            if (age.TotalHours < 1) return (int)age.TotalMinutes + "хв тому";
-            if (age.TotalDays < 1) return (int)age.TotalHours + "г тому";
-            return (int)age.TotalDays + "д тому";
+            return L10n.F("Format.Ago", RelativeAgeShort(value));
         }
 
         public static string OneLine(string value, int maxLength)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -89,15 +90,20 @@ namespace CodexTokenMonitor
             float scale = owner.LayoutScale;
             Func<int, int> p = n => Math.Max(1, (int)Math.Round(n * scale));
             AuroraUi.Surface(g, new Rectangle(0, 0, w - 1, h - 1), Blue, p(12));
-            string title = "СЕСІЯ" + (owner.TaskUsage == null ? "" : "  /  ЗАВД. " + FormatUtil.Tokens(owner.TaskUsage.Total));
+            string title = L10n.T("Usage.Session") + (owner.TaskUsage == null ? "" : L10n.F("Tokens.TaskDetail", FormatUtil.Tokens(owner.TaskUsage.Total)));
             AuroraUi.Text(g, title, new Rectangle(p(12), p(4), Math.Max(20, w - p(156)), p(17)), 7.3f * scale, Theme.Text, FontStyle.Bold, TextFormatFlags.Left);
             AuroraUi.Text(g, owner.Trend, new Rectangle(w - p(138), p(4), p(126), p(17)), 7.2f * scale, Theme.Cyan, FontStyle.Bold, TextFormatFlags.Right);
             TokenUsage u = owner.Usage ?? new TokenUsage();
-            string[] labels = { "УСЬОГО", "ВХІД", "ВИХІД", "КЕШ", "HIT", "API ≈" };
+            string[] labels = { L10n.T("Tokens.Total"), L10n.T("Tokens.Input"), L10n.T("Tokens.Output"), L10n.T("Tokens.Cache"), L10n.T("Tokens.Hit"), L10n.T("Tokens.Api") };
             string[] values = { FormatUtil.Tokens(u.Total), FormatUtil.Tokens(u.Input), FormatUtil.Tokens(u.Output),
                 FormatUtil.Tokens(u.Cached), FormatUtil.CacheHitPercent(u) + "%", FormatUtil.ApiValue(owner.ApiValue) };
             bool tall = h > p(120);
             bool compact = !tall && w < p(600);
+            if (compact)
+            {
+                labels[1] = L10n.T("Tokens.InputShort");
+                labels[2] = L10n.T("Tokens.OutputShort");
+            }
             int columns = tall ? 2 : compact ? 3 : 6;
             int columnWidth = (w - p(16)) / columns;
             for (int i = 0; i < 6; i++)
@@ -140,13 +146,16 @@ namespace CodexTokenMonitor
         private readonly Control _today;
         private readonly Timer _timer = new Timer();
         private readonly ContextMenuStrip _menu = new ContextMenuStrip();
-        private readonly ToolStripMenuItem _motion = new ToolStripMenuItem("Плавний рух · Ctrl+M");
+        private readonly ToolStripMenuItem _motion = new ToolStripMenuItem();
+        private readonly Dictionary<ToolStripMenuItem, string> _translatedItems = new Dictionary<ToolStripMenuItem, string>();
         private bool _disposed;
         private double _velocity;
 
         internal SpectrumMotion(Form form, ContextChart context, Control agents, Control today)
         {
             _form = form; _context = context; _agents = agents; _today = today;
+            _translatedItems.Add(_motion, "Appearance.Motion");
+            _motion.Text = L10n.T("Appearance.Motion");
             SpectrumFx.MotionEnabled = ViewSettings.Current.Motion && !SystemInformation.HighContrast;
             _motion.CheckOnClick = true;
             _motion.Checked = SpectrumFx.MotionEnabled;
@@ -164,7 +173,8 @@ namespace CodexTokenMonitor
             AddPreferences();
             _form.ContextMenuStrip = _menu;
             _context.ContextMenuStrip = _menu;
-            _context.AccessibleDescription = "Рухайте курсором, щоб змінити ракурс. Ctrl+M або права кнопка — увімкнути/вимкнути плавний рух.";
+            _context.AccessibleDescription = L10n.T("Appearance.ContextHelp");
+            L10n.LanguageChanged += HandleLanguageChanged;
             _form.KeyPreview = true;
             _form.KeyDown += HandleKey;
             _form.VisibleChanged += HandleVisibility;
@@ -187,43 +197,74 @@ namespace CodexTokenMonitor
             UpdateTimer();
         }
         internal void ShowMenu(Control anchor) { _menu.Show(anchor, new Point(0, anchor.Height)); }
+        private ToolStripMenuItem TranslatedItem(string key)
+        {
+            ToolStripMenuItem item = new ToolStripMenuItem(L10n.T(key));
+            _translatedItems.Add(item, key);
+            return item;
+        }
+        private void HandleLanguageChanged(object sender, EventArgs e)
+        {
+            if (_disposed) return;
+            if (_form.InvokeRequired) { _form.BeginInvoke(new Action(delegate { HandleLanguageChanged(sender, e); })); return; }
+            foreach (KeyValuePair<ToolStripMenuItem, string> pair in _translatedItems) pair.Key.Text = L10n.T(pair.Value);
+            _context.AccessibleDescription = L10n.T("Appearance.ContextHelp");
+            _form.Invalidate(true);
+        }
         private void AddPreferences()
         {
-            ToolStripMenuItem modes = new ToolStripMenuItem("Режим вигляду");
-            string[] modeNames = { "Компактний · Ctrl+1", "Аналітичний · Ctrl+2", "Презентаційний · Ctrl+3" };
+            ToolStripMenuItem languages = TranslatedItem("Appearance.Language");
+            string[] languageCodes = { "uk", "en" };
+            string[] languageKeys = { "Appearance.Ukrainian", "Appearance.English" };
+            for (int i = 0; i < languageCodes.Length; i++)
+            {
+                string language = languageCodes[i];
+                ToolStripMenuItem item = TranslatedItem(languageKeys[i]);
+                item.Click += delegate
+                {
+                    ViewSettings.Current.Language = language;
+                    if (_form is MainForm) ViewSettings.Current.Save();
+                    L10n.SetLanguage(language);
+                };
+                languages.DropDownOpening += delegate { item.Checked = L10n.Language == language; };
+                languages.DropDownItems.Add(item);
+            }
+            _menu.Items.Add(languages);
+            ToolStripMenuItem modes = TranslatedItem("Appearance.Mode");
+            string[] modeNames = { "Appearance.Compact", "Appearance.Analytical", "Appearance.Presentation" };
             for (int i = 0; i < 3; i++)
             {
                 int selected = i;
-                ToolStripMenuItem item = new ToolStripMenuItem(modeNames[i]);
+                ToolStripMenuItem item = TranslatedItem(modeNames[i]);
                 item.Click += delegate { if (_form is MainForm) ((MainForm)_form).ApplyDisplayMode(selected, true); };
                 modes.DropDownOpening += delegate { item.Checked = ViewSettings.Current.Mode == selected; };
                 modes.DropDownItems.Add(item);
             }
             _menu.Items.Add(modes);
-            ToolStripMenuItem palettes = new ToolStripMenuItem("Палітра");
-            string[] paletteNames = { "Океан · синій та бірюза", "Сонце · золото та зелень", "Вогонь · помаранчевий та червоний" };
+            ToolStripMenuItem palettes = TranslatedItem("Appearance.Palette");
+            string[] paletteNames = { "Appearance.Ocean", "Appearance.Sun", "Appearance.Fire" };
             for (int i = 0; i < 3; i++)
             {
                 int selected = i;
-                ToolStripMenuItem item = new ToolStripMenuItem(paletteNames[i]);
+                ToolStripMenuItem item = TranslatedItem(paletteNames[i]);
                 item.Click += delegate { ViewSettings.Current.Palette = selected; PreferencesChanged(); };
                 palettes.DropDownOpening += delegate { item.Checked = ViewSettings.Current.Palette == selected; };
                 palettes.DropDownItems.Add(item);
             }
             _menu.Items.Add(palettes);
-            ToolStripMenuItem intensity = new ToolStripMenuItem("Інтенсивність світла");
+            ToolStripMenuItem intensity = TranslatedItem("Appearance.Intensity");
             int[] levels = { 0, 35, 80, 100 };
-            string[] names = { "Без сяйва", "М'яке", "Виразне", "Максимальне" };
+            string[] names = { "Appearance.NoGlow", "Appearance.Soft", "Appearance.Vivid", "Appearance.Maximum" };
             for (int i = 0; i < levels.Length; i++)
             {
                 int level = levels[i];
-                ToolStripMenuItem item = new ToolStripMenuItem(names[i]);
+                ToolStripMenuItem item = TranslatedItem(names[i]);
                 item.Click += delegate { ViewSettings.Current.Intensity = level; PreferencesChanged(); };
                 intensity.DropDownOpening += delegate { item.Checked = ViewSettings.Current.Intensity == level; };
                 intensity.DropDownItems.Add(item);
             }
             _menu.Items.Add(intensity);
-            ToolStripMenuItem economy = new ToolStripMenuItem("Ощадний режим · автоматично від батареї");
+            ToolStripMenuItem economy = TranslatedItem("Appearance.Economy");
             economy.CheckOnClick = true;
             economy.Checked = ViewSettings.Current.Economy;
             economy.CheckedChanged += delegate { ViewSettings.Current.Economy = economy.Checked; PreferencesChanged(); };
@@ -271,6 +312,7 @@ namespace CodexTokenMonitor
             _form.VisibleChanged -= HandleVisibility;
             _form.Resize -= HandleVisibility;
             _form.Disposed -= HandleDisposed;
+            L10n.LanguageChanged -= HandleLanguageChanged;
             _menu.Dispose();
             
         }

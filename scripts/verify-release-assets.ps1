@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$Directory,
     [Parameter(Mandatory = $true)][string]$ExpectedCommit,
-    [string]$ReleaseTag = 'v2.0.0'
+    [string]$ReleaseTag = 'v2.1.0'
 )
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path -LiteralPath $Directory).Path

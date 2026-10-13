@@ -152,16 +152,16 @@ namespace CodexTokenMonitor
             int percent = (int)Math.Round(ratio * 100);
             Color accent = known ? owner.Accent : Theme.Muted;
             Surface(g, new Rectangle(0, 0, w - 1, h - 1), Theme.Teal, p(14), owner);
-            Text(g, "КОНТЕКСТ СЕСІЇ", new Rectangle(p(16), p(8), w / 2, p(18)), 8f * scale, Theme.Text, FontStyle.Bold, TextFormatFlags.Left);
-            Text(g, known ? (100 - percent) + "% ВІЛЬНО" : "НЕМАЄ ДАНИХ", new Rectangle(w / 2, p(8), w / 2 - p(16), p(18)), 7.5f * scale, known ? accent : Theme.Muted, FontStyle.Bold, TextFormatFlags.Right);
+            Text(g, L10n.T("Context.Session"), new Rectangle(p(16), p(8), w / 2, p(18)), 8f * scale, Theme.Text, FontStyle.Bold, TextFormatFlags.Left);
+            Text(g, known ? L10n.F("Context.Free", 100 - percent) : L10n.T("Context.NoDataUpper"), new Rectangle(w / 2, p(8), w / 2 - p(16), p(18)), 7.5f * scale, known ? accent : Theme.Muted, FontStyle.Bold, TextFormatFlags.Right);
             int leftWidth = Math.Max(p(110), Math.Min(w * 44 / 100, p(260)));
             Rectangle sculpture = new Rectangle(p(5), p(29), leftWidth - p(6), Math.Max(30, h - p(56)));
             ContextSculpture.Draw(g, sculpture, ratio, known, accent, owner.ViewYaw, owner.ViewPitch);
-            Text(g, known ? percent + "% зайнято" : "Немає даних",
+            Text(g, known ? L10n.F("Context.Used", percent) : L10n.T("Context.NoData"),
                 new Rectangle(p(8), h - p(24), leftWidth - p(16), p(18)),
                 9f * scale, Theme.Text, FontStyle.Bold, TextFormatFlags.HorizontalCenter);
             int plotLeft = leftWidth + p(12);
-            Text(g, known ? FormatUtil.Tokens(owner.Used) + " / " + FormatUtil.Tokens(owner.Maximum) + " токенів" : "Очікуємо вимірювання", new Rectangle(plotLeft, p(29), w - plotLeft - p(14), p(21)), 10f * scale, Theme.Text, FontStyle.Bold, TextFormatFlags.Left);
+            Text(g, known ? L10n.F("Context.Tokens", FormatUtil.Tokens(owner.Used), FormatUtil.Tokens(owner.Maximum)) : L10n.T("Context.Waiting"), new Rectangle(plotLeft, p(29), w - plotLeft - p(14), p(21)), 10f * scale, Theme.Text, FontStyle.Bold, TextFormatFlags.Left);
             Rectangle plot = new Rectangle(plotLeft, p(55), Math.Max(20, w - plotLeft - p(40)), Math.Max(16, h - p(83)));
             foreach (int level in new[] { 100, 50, 0 })
             {
@@ -191,11 +191,11 @@ namespace CodexTokenMonitor
                 PointF last = points[points.Length - 1];
                 using (SolidBrush glow = new SolidBrush(Color.FromArgb(45, accent))) g.FillEllipse(glow, last.X - p(6), last.Y - p(6), p(12), p(12));
                 using (SolidBrush dot = new SolidBrush(Theme.Text)) g.FillEllipse(dot, last.X - p(2), last.Y - p(2), p(4), p(4));
-                string time = samples.Count < 2 ? "ЗАРАЗ" : samples[0].At.ToString("HH:mm") + "–" + samples[samples.Count - 1].At.ToString("HH:mm");
+                string time = samples.Count < 2 ? L10n.T("Context.Now") : samples[0].At.ToString("HH:mm", L10n.Culture) + "–" + samples[samples.Count - 1].At.ToString("HH:mm", L10n.Culture);
                 Text(g, time, new Rectangle(plot.Left, h - p(22), plot.Width / 2, p(15)), 6.5f * scale, Theme.Muted, FontStyle.Regular, TextFormatFlags.Left);
                 Text(g, owner.Trend, new Rectangle(plot.Left + plot.Width / 2, h - p(22), plot.Width / 2, p(15)), 6.25f * scale, accent, FontStyle.Bold, TextFormatFlags.Right);
             }
-            else Text(g, "Графік з’явиться після першої події", plot, 7f * scale, Theme.Muted, FontStyle.Regular, TextFormatFlags.HorizontalCenter);
+            else Text(g, L10n.T("Context.EmptyChart"), plot, 7f * scale, Theme.Muted, FontStyle.Regular, TextFormatFlags.HorizontalCenter);
         }
     }
 

@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$ExecutablePath,
     [Parameter(Mandatory = $true)][string]$ExpectedCommit,
-    [string]$ExpectedVersion = '2.0.0'
+    [string]$ExpectedVersion = '2.1.0'
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'test-environment.ps1')
