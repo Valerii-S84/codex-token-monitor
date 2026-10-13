@@ -30,7 +30,7 @@ Codex Token Monitor $ReleaseTag is a local Windows monitor for Codex sessions, p
 
 Requirements: Windows 10 or 11 and .NET Framework 4.8 or later. The complete interface is available in Ukrainian and English. No API key or installer is required.
 
-Choose Appearance / Language (Вигляд / Мова) to switch immediately without restarting. The choice persists between launches. Existing installations retain Ukrainian until you choose otherwise; new installations use Ukrainian on Ukrainian Windows and English elsewhere. Dates, durations, tooltips, menus, chart labels, and analytics update together while your selected agent, tab, window size, and chart history remain intact. Original task, repository, and model names are preserved.
+Choose Appearance / Language to switch immediately without restarting. The choice persists between launches. Existing installations retain Ukrainian until you choose otherwise; new installations use Ukrainian on Ukrainian Windows and English elsewhere. Dates, durations, tooltips, menus, chart labels, and analytics update together while your selected agent, tab, window size, and chart history remain intact. Original task, repository, and model names are preserved.
 
 This release preserves the compact/expanded layouts, analytics, incremental indexing, palettes, animation, always-on-top mode, and VS Code autostart. Windows CI verifies nine render scenarios per language (18 cases), localization and settings migration, regression gates, and the exact candidate binary in isolated data directories.
 
