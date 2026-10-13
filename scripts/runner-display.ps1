@@ -1,3 +1,4 @@
+param([switch]$Prepare)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $output = Join-Path $env:TEMP ('CodexDisplayProbe-' + [Guid]::NewGuid().ToString('N') + '.exe')
@@ -10,6 +11,10 @@ $parameters.CompilerOptions = '/target:exe /win32manifest:"' + (Join-Path $proje
 try {
     $result = $provider.CompileAssemblyFromFile($parameters, [string[]]@(Join-Path $projectRoot 'tests\RunnerDisplayProbe.cs'))
     if ($result.Errors.HasErrors) { throw (($result.Errors | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine) }
+    if ($Prepare) {
+        & $output --prepare
+        if ($LASTEXITCODE -ne 0) { throw 'Runner display preparation failed.' }
+    }
     & $output
     if ($LASTEXITCODE -ne 0) { throw 'Display probe failed.' }
 } finally {

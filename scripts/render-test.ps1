@@ -1,10 +1,13 @@
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'test-environment.ps1')
+$testEnvironment = Enter-TestEnvironment
+try {
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $sources = @((Get-ChildItem -LiteralPath (Join-Path $projectRoot 'src') -Filter '*.cs' -File | Select-Object -ExpandProperty FullName))
 $sources += (Join-Path $projectRoot 'tests\RenderTest.cs')
 $sources += (Join-Path $projectRoot 'tests\SpectrumEffectsTest.cs')
 $sources += (Join-Path $projectRoot 'tests\ProductViewTest.cs')
-$output = Join-Path $env:TEMP 'CodexTokenMonitor.RenderTest.exe'
+$output = Join-Path $testEnvironment.Root 'CodexTokenMonitor.RenderTest.exe'
 $renderDir = Join-Path $projectRoot 'artifacts\renders'
 $provider = New-Object Microsoft.CSharp.CSharpCodeProvider
 $parameters = New-Object System.CodeDom.Compiler.CompilerParameters
@@ -18,3 +21,4 @@ $result = $provider.CompileAssemblyFromFile($parameters, [string[]]$sources)
 if ($result.Errors.HasErrors) { throw (($result.Errors | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine) }
 & $output $renderDir
 if ($LASTEXITCODE -ne 0) { throw "Render test failed with exit code $LASTEXITCODE" }
+} finally { Exit-TestEnvironment $testEnvironment }

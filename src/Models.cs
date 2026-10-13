@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -308,7 +308,13 @@ namespace CodexTokenMonitor
 
         public static string SettingsDirectory
         {
-            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CodexTokenMonitor"); }
+            get
+            {
+                string overridePath = Environment.GetEnvironmentVariable("CODEX_TOKEN_MONITOR_DATA_HOME");
+                return String.IsNullOrWhiteSpace(overridePath)
+                    ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CodexTokenMonitor")
+                    : Path.GetFullPath(overridePath);
+            }
         }
 
         public static string SettingsPath
